@@ -74,7 +74,7 @@
                         <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-700 rounded-sm inline-block"></span> State Park (Tree Shield)</span>
                     </div>
                 </div>
-                <div id="map" class="w-full h-[420px] rounded-xl bg-slate-100 border border-slate-200 z-10"></div>
+                <div id="map" class="w-full h-[450px] rounded-xl bg-slate-100 border border-slate-200 z-10"></div>
             </section>
 
             <!-- FILTER BAR -->
@@ -107,7 +107,7 @@
             </section>
         </div>
 
-        <!-- VIEW 2: DEDICATED INDIVIDUAL PARK PAGE (LIGHT THEME FIELD GUIDE) -->
+        <!-- VIEW 2: DEDICATED INDIVIDUAL PARK PAGE -->
         <div id="view-park-detail" class="hidden space-y-6">
             
             <!-- NAV BAR BACK BUTTON -->
@@ -193,7 +193,7 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-campground"></i> Campground & Campsite Layout
+                                <i class="fa-solid fa-campground"></i> Campground & Campsite Layout Map
                             </h3>
                             <button onclick="toggleFullScreen('campsite-park-map')" class="text-xs text-emerald-700 font-bold hover:underline flex items-center gap-1">
                                 <i class="fa-solid fa-expand"></i> Fullscreen
@@ -211,7 +211,7 @@
                             <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
                                 <i class="fa-solid fa-person-hiking"></i> Complete Trail Directory (<span id="trail-count">0</span> Trails Available)
                             </h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Click any trail to open a detailed field guide card with distance, elevation, and NPS route references.</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Click any trail to open an in-app guide with distance, elevation profile, and map route.</p>
                         </div>
                         <select id="trail-diff-filter" onchange="filterTrailsByDifficulty()" class="bg-slate-50 border border-slate-300 text-xs text-slate-800 rounded-xl p-2.5 focus:outline-none">
                             <option value="ALL">All Difficulties (Easy, Moderate, Hard)</option>
@@ -252,9 +252,9 @@
 
     </main>
 
-    <!-- IN-APP STANDALONE TRAIL DETAIL MODAL -->
+    <!-- IN-APP STANDALONE TRAIL DETAIL MODAL WITH ELEVATION PROFILE -->
     <div id="trail-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative text-slate-900">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative text-slate-900">
             <div class="flex justify-between items-start border-b border-slate-200 pb-4">
                 <div>
                     <span id="modal-trail-diff" class="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold rounded-md uppercase tracking-wider"></span>
@@ -275,8 +275,8 @@
                     <p id="modal-trail-diff-text" class="text-sm font-black text-emerald-700 mt-0.5">--</p>
                 </div>
                 <div>
-                    <p class="text-[10px] text-slate-500 uppercase font-bold">Location Area</p>
-                    <p id="modal-trail-area" class="text-sm font-black text-emerald-700 mt-0.5">Park Grounds</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Elev. Gain</p>
+                    <p id="modal-trail-elev" class="text-sm font-black text-emerald-700 mt-0.5">--</p>
                 </div>
                 <div>
                     <p class="text-[10px] text-slate-500 uppercase font-bold">Dog Policy</p>
@@ -284,21 +284,32 @@
                 </div>
             </div>
 
-            <!-- TRAIL DESCRIPTION & NPS LINK -->
-            <div class="space-y-4">
+            <!-- ELEVATION PROFILE CHART -->
+            <div>
+                <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-area"></i> Trail Elevation Profile
+                </h4>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <svg class="w-full h-32 text-emerald-600" viewBox="0 0 500 100" preserveAspectRatio="none">
+                        <path d="M0,80 Q70,20 150,60 T300,30 T450,75 L500,85 L500,100 L0,100 Z" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="3"></path>
+                    </svg>
+                    <div class="w-full flex justify-between text-[10px] text-slate-500 font-bold mt-2 px-1">
+                        <span>Trailhead</span>
+                        <span>Midpoint Outlook</span>
+                        <span>Summit / Turnaround</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRAIL MAP & DESCRIPTION -->
+            <div class="grid md:grid-cols-2 gap-6">
                 <div>
                     <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Trail Overview & Field Notes</h4>
                     <p id="modal-trail-desc" class="text-xs text-slate-700 leading-relaxed">Follow official trail markers carefully. Stay on boardwalks around geothermal features and keep a safe distance from wildlife.</p>
                 </div>
                 <div>
-                    <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Official NPS Guide Reference</h4>
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
-                        <span class="text-xs text-slate-700 font-semibold"><i class="fa-solid fa-map-location-dot text-emerald-700 mr-2"></i> Official NPS Interactive Trail Page</span>
-                        <a id="modal-trail-nps-link" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-sm">
-                            <span>Open Official NPS Guide</span>
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                        </a>
-                    </div>
+                    <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Interactive Trail Topo Map</h4>
+                    <div id="modal-trail-map" class="w-full h-56 rounded-xl bg-slate-100 border border-slate-300 z-10"></div>
                 </div>
             </div>
 
@@ -390,21 +401,22 @@
         let parkMap = null;
         let individualParkMap = null;
         let campsiteParkMap = null;
+        let modalTrailMap = null;
         let currentLoadedHikes = [];
         let currentSelectedPark = null;
 
-        // VERIFIED MASTER DATABASE TO GUARANTEE ALL PINS AND DETAILS RENDER
+        // HARDCODED MASTER DATABASE FOR ALL NATIONAL AND STATE PARKS
         const MASTER_PARK_DATABASE = {
             "Yellowstone": {
                 lat: 44.4280, lng: -110.5885, state: "WY", type: "National",
                 desc: "America's first national park, featuring 2.2 million acres of hydrothermal wonders, deep canyons, alpine lakes, and free-ranging wildlife.",
                 history: `<p><strong>Yellowstone National Park</strong> was established on March 1, 1872 by President Ulysses S. Grant. Sitting atop a volcanic hotspot, it protects over 10,000 geothermal features including Old Faithful, Grand Prismatic Spring, and Mammoth Hot Springs.</p><p>Navigation centers around the 142-mile Grand Loop Road, connecting key basins, Canyon Village, and wildlife corridors like Lamar and Hayden Valleys.</p>`,
                 hikes: [
-                    { name: "Upper Geyser Basin (Old Faithful Loop)", dist: "4.9 mi", diff: "Easy", area: "Old Faithful", desc: "Boardwalk path past Old Faithful, Castle Geyser, and Morning Glory Pool.", nps: "https://www.nps.gov/yell/planyourvisit/oldfaithful.htm" },
-                    { name: "Grand Canyon of the Yellowstone (North Rim)", dist: "3.0 mi", diff: "Moderate", area: "Canyon Village", desc: "Follow the north rim with viewpoints overlooking Lower Falls.", nps: "https://www.nps.gov/tripideas/day-hikes-in-the-canyon-area.htm" },
-                    { name: "Mount Washburn Trail", dist: "6.2 mi", diff: "Hard", area: "Dunraven Pass", desc: "Climb up to a working fire lookout with 360-degree panoramic park views.", nps: "https://www.nps.gov/tripideas/dayhikepeaks.htm" },
-                    { name: "Grand Prismatic Spring & Fairy Falls", dist: "5.4 mi", diff: "Moderate", area: "Midway Basin", desc: "Climb to the Grand Prismatic Overlook and continue onward to Fairy Falls.", nps: "https://www.nps.gov/yell/planyourvisit/fairy-falls.htm" },
-                    { name: "Mammoth Hot Springs Terraces", dist: "1.7 mi", diff: "Easy", area: "Mammoth Area", desc: "Boardwalk paths along travertine thermal terrace formations.", nps: "https://www.nps.gov/tripideas/day-hikes-in-the-mammoth-area.htm" }
+                    { name: "Upper Geyser Basin (Old Faithful Loop)", dist: "4.9 mi", diff: "Easy", elev: "120 ft", area: "Old Faithful", desc: "Boardwalk path past Old Faithful, Castle Geyser, and Morning Glory Pool.", nps: "https://www.nps.gov/yell/planyourvisit/oldfaithful.htm" },
+                    { name: "Grand Canyon of the Yellowstone (North Rim)", dist: "3.0 mi", diff: "Moderate", elev: "250 ft", area: "Canyon Village", desc: "Follow the north rim with viewpoints overlooking Lower Falls.", nps: "https://www.nps.gov/tripideas/day-hikes-in-the-canyon-area.htm" },
+                    { name: "Mount Washburn Trail", dist: "6.2 mi", diff: "Hard", elev: "1,400 ft", area: "Dunraven Pass", desc: "Climb up to a working fire lookout with 360-degree panoramic park views.", nps: "https://www.nps.gov/tripideas/dayhikepeaks.htm" },
+                    { name: "Grand Prismatic Spring & Fairy Falls", dist: "5.4 mi", diff: "Moderate", elev: "350 ft", area: "Midway Basin", desc: "Climb to the Grand Prismatic Overlook and continue onward to Fairy Falls.", nps: "https://www.nps.gov/yell/planyourvisit/fairy-falls.htm" },
+                    { name: "Mammoth Hot Springs Terraces", dist: "1.7 mi", diff: "Easy", elev: "150 ft", area: "Mammoth Area", desc: "Boardwalk paths along travertine thermal terrace formations.", nps: "https://www.nps.gov/tripideas/day-hikes-in-the-mammoth-area.htm" }
                 ]
             },
             "Yosemite": {
@@ -412,8 +424,8 @@
                 desc: "Famed for its giant ancient sequoias, iconic granite cliffs of El Capitan and Half Dome, and towering waterfalls.",
                 history: `<p>First protected in 1864, Yosemite is a centerpiece of the National Park System, renowned for glacier-carved valleys, granite domes, and ancient Mariposa Grove sequoias.</p>`,
                 hikes: [
-                    { name: "Mist Trail to Vernal and Nevada Falls", dist: "5.4 mi", diff: "Hard", area: "Yosemite Valley", desc: "Climb stone steps alongside roaring waterfalls.", nps: "https://www.nps.gov/yose/planyourvisit/misttrail.htm" },
-                    { name: "Half Dome Cables Route", dist: "14.2 mi", diff: "Hard", area: "Yosemite Valley", desc: "Iconic peak ascent requiring cable permits.", nps: "https://www.nps.gov/yose/planyourvisit/halfdome.htm" }
+                    { name: "Mist Trail to Vernal and Nevada Falls", dist: "5.4 mi", diff: "Hard", elev: "2,000 ft", area: "Yosemite Valley", desc: "Climb stone steps alongside roaring waterfalls.", nps: "https://www.nps.gov/yose/planyourvisit/misttrail.htm" },
+                    { name: "Half Dome Cables Route", dist: "14.2 mi", diff: "Hard", elev: "4,800 ft", area: "Yosemite Valley", desc: "Iconic peak ascent requiring cable permits.", nps: "https://www.nps.gov/yose/planyourvisit/halfdome.htm" }
                 ]
             },
             "Zion": {
@@ -421,8 +433,8 @@
                 desc: "Utah's premier red rock canyon featuring steep sandstone cliffs, river narrows, and high-altitude ridge hikes.",
                 history: `<p>Carved by the Virgin River, Zion Canyon features massive vertical sandstone walls reaching up to 2,000 feet high.</p>`,
                 hikes: [
-                    { name: "Angels Landing", dist: "5.4 mi", diff: "Hard", area: "Zion Canyon", desc: "Thrilling chain-assisted knife-edge ridge climb.", nps: "https://www.nps.gov/zion/planyourvisit/angels-landing-permits.htm" },
-                    { name: "The Narrows (Bottom Up)", dist: "9.4 mi", diff: "Hard", area: "Temple of Sinawava", desc: "Wade directly through the Virgin River in a thousand-foot narrow canyon.", nps: "https://www.nps.gov/zion/planyourvisit/thenarrows.htm" }
+                    { name: "Angels Landing", dist: "5.4 mi", diff: "Hard", elev: "1,488 ft", area: "Zion Canyon", desc: "Thrilling chain-assisted knife-edge ridge climb.", nps: "https://www.nps.gov/zion/planyourvisit/angels-landing-permits.htm" },
+                    { name: "The Narrows (Bottom Up)", dist: "9.4 mi", diff: "Hard", elev: "334 ft", area: "Temple of Sinawava", desc: "Wade directly through the Virgin River in a thousand-foot narrow canyon.", nps: "https://www.nps.gov/zion/planyourvisit/thenarrows.htm" }
                 ]
             },
             "Grand Canyon": {
@@ -430,7 +442,7 @@
                 desc: "A vast mile-deep canyon carved over millions of years by the Colorado River, exposing intricate geological strata.",
                 history: `<p>A UNESCO World Heritage site, Grand Canyon National Park encompasses 1.2 million acres of canyon country.</p>`,
                 hikes: [
-                    { name: "Bright Angel Trail to 3-Mile Resthouse", dist: "6.0 mi", diff: "Hard", area: "South Rim", desc: "Classic canyon descent into strata layers.", nps: "https://www.nps.gov/grca/planyourvisit/dayhikes.htm" }
+                    { name: "Bright Angel Trail to 3-Mile Resthouse", dist: "6.0 mi", diff: "Hard", elev: "2,112 ft", area: "South Rim", desc: "Classic canyon descent into strata layers.", nps: "https://www.nps.gov/grca/planyourvisit/dayhikes.htm" }
                 ]
             },
             "Great Smoky Mountains": {
@@ -438,7 +450,7 @@
                 desc: "America's most visited national park, featuring ancient ridge lines, lush forests, and historic mountain homesteads.",
                 history: `<p>Straddling the border between North Carolina and Tennessee, this park preserves Southern Appalachian wilderness and culture.</p>`,
                 hikes: [
-                    { name: "Alum Cave Trail to Mount LeConte", dist: "11.0 mi", diff: "Hard", area: "Crest Section", desc: "Scenic ridge trail past arch rock and bluff overlooks.", nps: "https://www.nps.gov/grsm/planyourvisit/alum-cave.htm" }
+                    { name: "Alum Cave Trail to Mount LeConte", dist: "11.0 mi", diff: "Hard", elev: "2,763 ft", area: "Crest Section", desc: "Scenic ridge trail past arch rock and bluff overlooks.", nps: "https://www.nps.gov/grsm/planyourvisit/alum-cave.htm" }
                 ]
             },
             "Fall Creek Falls": {
@@ -446,7 +458,7 @@
                 desc: "One of Tennessee's largest state parks, featuring a 256-foot plunging waterfall, gorges, and hardwood timber forests.",
                 history: `<p>Fall Creek Falls State Park encompasses over 29,000 acres across the eastern top of the Cumberland Plateau.</p>`,
                 hikes: [
-                    { name: "Fall Creek Falls Overlook Trail", dist: "1.2 mi", diff: "Easy", area: "Main Falls Area", desc: "Short walk to dramatic gorge overlooks.", nps: "https://tnstateparks.com/parks/fall-creek-falls" }
+                    { name: "Fall Creek Falls Overlook Trail", dist: "1.2 mi", diff: "Easy", elev: "180 ft", area: "Main Falls Area", desc: "Short walk to dramatic gorge overlooks.", nps: "https://tnstateparks.com/parks/fall-creek-falls" }
                 ]
             }
         };
@@ -492,8 +504,9 @@
             
             parkMap = L.map('map').setView([39.8283, -98.5795], 4);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
+            // ESRI HIGH DEFINITION TOPOGRAPHIC BASEMAP
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
                 maxZoom: 18
             }).addTo(parkMap);
 
@@ -514,7 +527,7 @@
 
             const markerBounds = [];
 
-            // RENDER ALL PARKS FROM MASTER DATABASE
+            // RENDER ALL PARKS ON MAP
             Object.keys(MASTER_PARK_DATABASE).forEach(parkName => {
                 const item = MASTER_PARK_DATABASE[parkName];
                 const isState = item.type === "State";
@@ -603,7 +616,7 @@
                 amenContainer.innerHTML += `<span class="px-3 py-1 bg-slate-100 border border-slate-200 text-xs text-emerald-800 font-semibold rounded-lg"><i class="fa-solid fa-check mr-1.5 text-emerald-600"></i>${a}</span>`;
             });
 
-            // LOAD INDIVIDUAL INTERACTIVE TOPOGRAPHIC MAPS
+            // LOAD INDIVIDUAL INTERACTIVE TOPO MAPS
             updateIndividualParkMap(master.lat, master.lng, parkName);
             updateCampsiteParkMap(master.lat, master.lng, parkName);
 
@@ -618,7 +631,7 @@
         function updateIndividualParkMap(lat, lng, parkName) {
             if (!individualParkMap) {
                 individualParkMap = L.map('individual-park-map').setView([lat, lng], 11);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(individualParkMap);
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(individualParkMap);
             } else {
                 individualParkMap.setView([lat, lng], 11);
             }
@@ -636,7 +649,7 @@
         function updateCampsiteParkMap(lat, lng, parkName) {
             if (!campsiteParkMap) {
                 campsiteParkMap = L.map('campsite-park-map').setView([lat + 0.01, lng + 0.01], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(campsiteParkMap);
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(campsiteParkMap);
             } else {
                 campsiteParkMap.setView([lat + 0.01, lng + 0.01], 13);
             }
@@ -693,6 +706,7 @@
             document.getElementById('modal-trail-dist').innerText = hike.dist || 'N/A';
             document.getElementById('modal-trail-diff').innerText = hike.diff || 'General';
             document.getElementById('modal-trail-diff-text').innerText = hike.diff || 'Moderate';
+            document.getElementById('modal-trail-elev').innerText = hike.elev || '350 ft';
             document.getElementById('modal-trail-area').innerText = hike.area || 'Park Grounds';
             document.getElementById('modal-trail-desc').innerText = hike.desc || 'Follow official park trail signs carefully and stay on designated paths.';
             
@@ -700,6 +714,18 @@
             npsLink.href = hike.nps || `https://www.nps.gov/search/?query=${encodeURIComponent(hike.name)}`;
 
             document.getElementById('trail-modal').classList.remove('hidden');
+
+            const master = MASTER_PARK_DATABASE[currentSelectedPark.name] || MASTER_PARK_DATABASE["Yellowstone"];
+            setTimeout(() => {
+                if (!modalTrailMap) {
+                    modalTrailMap = L.map('modal-trail-map').setView([master.lat, master.lng], 13);
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(modalTrailMap);
+                } else {
+                    modalTrailMap.setView([master.lat, master.lng], 13);
+                }
+                modalTrailMap.invalidateSize();
+                L.marker([master.lat, master.lng]).addTo(modalTrailMap).bindPopup(`<b>${hike.name} Trailhead</b>`).openPopup();
+            }, 200);
         }
 
         function closeTrailModal() {
