@@ -243,7 +243,7 @@
         
         // AUTOMATED YOUTUBE INTEGRATION CREDENTIALS
         const YOUTUBE_API_KEY = "AIzaSyB8DRj79LBTysd2tpvrem0f28SFD1NuUbM";
-        const YOUTUBE_CHANNEL_HANDLE = "@TheParkBlueprint";
+        const YOUTUBE_CHANNEL_ID = "YOUR_YOUTUBE_CHANNEL_ID_HERE"; // Enter your YouTube Channel ID starting with UC...
 
         const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const CURRENT_USER_ID = 1;
@@ -381,8 +381,11 @@
             videoContainer.innerHTML = `<p class="text-xs text-slate-400 p-6 text-center animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching @TheParkBlueprint for video guides...</p>`;
 
             try {
-               const searchQuery = `${YOUTUBE_CHANNEL_HANDLE} ${parkName}`;
-const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=1`;
+                let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(parkName)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=1`;
+                if (YOUTUBE_CHANNEL_ID && YOUTUBE_CHANNEL_ID !== "YOUR_YOUTUBE_CHANNEL_ID_HERE") {
+                    searchUrl += `&channelId=${YOUTUBE_CHANNEL_ID}`;
+                }
+
                 const response = await fetch(searchUrl);
                 const result = await response.json();
 
