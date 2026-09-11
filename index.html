@@ -381,7 +381,8 @@
             videoContainer.innerHTML = `<p class="text-xs text-slate-400 p-6 text-center animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching @TheParkBlueprint for video guides...</p>`;
 
             try {
-                const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(parkName)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=1`;
+               const searchQuery = `${YOUTUBE_CHANNEL_HANDLE} ${parkName}`;
+const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=1`;
                 const response = await fetch(searchUrl);
                 const result = await response.json();
 
