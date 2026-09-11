@@ -14,7 +14,6 @@
     <header class="border-b border-emerald-900/40 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <!-- OFFICIAL LOGO -->
                 <img src="https://vllskkymhivyqfxlolja.supabase.co/storage/v1/object/public/branding/Park%20Blueprint%20Logo.png" alt="The Park Blueprint Logo" class="h-12 w-auto object-contain">
                 <div>
                     <h1 class="text-xl font-black tracking-wider text-emerald-400 uppercase leading-none">The Park Blueprint</h1>
@@ -35,7 +34,7 @@
     <!-- MAIN CONTENT CONTAINER -->
     <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
 
-        <!-- ================= VIEW 1: PARK EXPLORER ================= -->
+        <!-- VIEW 1: PARK EXPLORER -->
         <div id="view-explorer" class="space-y-8">
             
             <!-- FILTER BAR -->
@@ -142,7 +141,9 @@
                 <!-- TAB 3: MEDIA / YOUTUBE GUIDES -->
                 <div id="tab-media" class="tab-content hidden bg-slate-900 border border-slate-800 rounded-2xl p-6">
                     <h3 class="text-md font-bold text-emerald-400 mb-4 uppercase tracking-wider"><i class="fa-solid fa-video mr-2"></i>Park Blueprint Channel Guides</h3>
-                    <div id="video-container" class="aspect-video max-w-3xl mx-auto rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center"></div>
+                    <div id="video-container" class="aspect-video max-w-3xl mx-auto rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
+                        <p class="text-xs text-slate-500 p-6 text-center">Select a park to view associated channel guides.</p>
+                    </div>
                 </div>
 
                 <!-- TAB 4: COMMUNITY FIELD NOTES -->
@@ -155,7 +156,7 @@
 
         </div>
 
-        <!-- ================= VIEW 2: BADGE PASSPORT ================= -->
+        <!-- VIEW 2: BADGE PASSPORT -->
         <div id="view-badges" class="hidden space-y-8">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                 <h2 class="text-2xl font-black text-slate-100 mb-2">🏆 Fitbit-Style Achievement Cabinet</h2>
@@ -221,13 +222,10 @@
             <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
                 <p><strong>Effective Date:</strong> September 2026</p>
                 <p>The Park Blueprint operates as an independent educational travel resource and park tracker platform.</p>
-                
                 <h4 class="font-bold text-slate-100 text-sm">1. YouTube & Third-Party API Services</h4>
                 <p>This application uses YouTube API Services to display educational park videos. By using this feature, users agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank" class="text-emerald-400 underline">YouTube Terms of Service</a> and the <a href="http://www.google.com/policies/privacy" target="_blank" class="text-emerald-400 underline">Google Privacy Policy</a>.</p>
-                
                 <h4 class="font-bold text-slate-100 text-sm">2. Data Collection</h4>
                 <p>We do not sell personal data. Activity logs and visit entries submitted through the site are stored securely via Supabase for user progress tracking and badge achievements.</p>
-                
                 <h4 class="font-bold text-slate-100 text-sm">3. Contact Us</h4>
                 <p>If you have any questions regarding this Privacy Policy, please reach out via our official domain channels at <em>theparkblueprint.com</em>.</p>
             </div>
@@ -239,11 +237,12 @@
 
     <!-- SCRIPT LOGIC -->
     <script>
-        // =================================================================
-        // REPLACE THESE WITH YOUR SUPABASE KEYS FROM PROJECT SETTINGS > API
-        // =================================================================
-        const SUPABASE_URL = "vllskkymhivyqfxlolja";
-        const SUPABASE_ANON_KEY = "sb_publishable_UT-sOa7DMPCucXVDX_U7zw__RT1E8I8";
+        const SUPABASE_URL = "YOUR_SUPABASE_URL_HERE";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+        
+        // AUTOMATED YOUTUBE INTEGRATION CREDENTIALS
+        const YOUTUBE_API_KEY = "AIzaSyB8DRj79LBTysd2tpvrem0f28SFD1NuUbM";
+        const YOUTUBE_CHANNEL_HANDLE = "@TheParkBlueprint";
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const CURRENT_USER_ID = 1;
@@ -338,13 +337,8 @@
                 hikesContainer.innerHTML = `<p class="text-xs text-slate-500">No trail profiles added yet.</p>`;
             }
 
-            const { data: video } = await supabase.from('park_videos').select('*').eq('park_id', parkId).single();
-            const videoContainer = document.getElementById('video-container');
-            if (video) {
-                videoContainer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${video.youtube_video_id}" frameborder="0" allowfullscreen></iframe>`;
-            } else {
-                videoContainer.innerHTML = `<p class="text-xs text-slate-500 p-6 text-center">No video linked for this park yet.</p>`;
-            }
+            // AUTOMATED YOUTUBE CHANNEL FETCH ENGINE
+            fetchYouTubeVideoForPark(park.name);
 
             const { data: feed } = await supabase.from('community_feed').select('*').eq('park_id', parkId);
             const feedContainer = document.getElementById('community-feed');
@@ -360,6 +354,27 @@
                 });
             } else {
                 feedContainer.innerHTML = `<p class="text-xs text-slate-500">No community notes posted yet for this park.</p>`;
+            }
+        }
+
+        async function fetchYouTubeVideoForPark(parkName) {
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.innerHTML = `<p class="text-xs text-slate-400 p-6 text-center animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Searching @TheParkBlueprint for video guides...</p>`;
+
+            try {
+                const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(parkName)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=1`;
+                const response = await fetch(searchUrl);
+                const result = await response.json();
+
+                if (result.items && result.items.length > 0) {
+                    const videoId = result.items[0].id.videoId;
+                    videoContainer.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                } else {
+                    videoContainer.innerHTML = `<p class="text-xs text-slate-500 p-6 text-center">No video guide found on @TheParkBlueprint for ${parkName} yet.</p>`;
+                }
+            } catch (err) {
+                console.error("YouTube Fetch Error:", err);
+                videoContainer.innerHTML = `<p class="text-xs text-slate-500 p-6 text-center">Unable to load YouTube video at this time.</p>`;
             }
         }
 
@@ -443,8 +458,8 @@
         function switchView(viewName) {
             document.getElementById('view-explorer').classList.toggle('hidden', viewName !== 'explorer');
             document.getElementById('view-badges').classList.toggle('hidden', viewName !== 'badges');
-            document.getElementById('nav-explorer').className = viewName === 'explorer' ? 'px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 text-slate-950 transition' : 'px-4 py-2 rounded-lg text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
-            document.getElementById('nav-badges').className = viewName === 'badges' ? 'px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 text-slate-950 transition' : 'px-4 py-2 rounded-lg text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+            document.getElementById('nav-explorer').className = viewName === 'explorer' ? 'px-4 py-2 rounded-xl text-sm font-bold bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400' : 'px-4 py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+            document.getElementById('nav-badges').className = viewName === 'badges' ? 'px-4 py-2 rounded-xl text-sm font-bold bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400' : 'px-4 py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
         }
 
         function switchTab(tabName) {
