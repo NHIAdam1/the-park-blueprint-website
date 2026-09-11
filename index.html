@@ -149,18 +149,16 @@
                                 </h3>
                                 <p class="text-xs text-slate-400 mt-0.5">High-resolution official USGS / NPS Park map including visitor centers, roads, and topography.</p>
                             </div>
-                            <div class="flex gap-2">
-                                <a id="nps-official-link" href="#" target="_blank" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-lg">
-                                    <i class="fa-solid fa-external-link"></i> Official NPS Maps Page
-                                </a>
-                            </div>
+                            <button onclick="openMapModal(document.getElementById('official-nps-map-img').src, 'Official Park Brochure Map')" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-lg">
+                                <i class="fa-solid fa-expand"></i> Expand Full Screen
+                            </button>
                         </div>
 
-                        <!-- CRISP IMAGE VIEWER FOR NPS BROCHURES -->
-                        <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative group min-h-[500px] flex items-center justify-center">
-                            <img id="official-nps-map-img" src="" alt="Official NPS Park Map" class="w-full h-auto max-h-[700px] object-contain cursor-zoom-in" onclick="window.open(this.src, '_blank')">
-                            <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-300">
-                                Click map to view full-resolution image
+                        <!-- IN-PAGE MAP CONTAINER -->
+                        <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative group min-h-[500px] flex items-center justify-center cursor-pointer" onclick="openMapModal(document.getElementById('official-nps-map-img').src, 'Official Park Brochure Map')">
+                            <img id="official-nps-map-img" src="" alt="Official NPS Park Map" class="w-full h-auto max-h-[700px] object-contain">
+                            <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-300 group-hover:text-emerald-400 transition">
+                                <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click map to inspect full screen
                             </div>
                         </div>
                     </div>
@@ -224,6 +222,21 @@
             </button>
         </p>
     </footer>
+
+    <!-- IN-APP IN-SCREEN MAP LIGHTBOX MODAL -->
+    <div id="map-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col hidden p-4">
+        <div class="flex justify-between items-center bg-slate-900 border border-slate-800 rounded-xl px-6 py-4 mb-4">
+            <h3 id="map-modal-title" class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                <i class="fa-solid fa-map"></i> In-App Map Viewer
+            </h3>
+            <button onclick="closeMapModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                <i class="fa-solid fa-xmark mr-1"></i> Close Viewer
+            </button>
+        </div>
+        <div class="flex-1 rounded-xl bg-slate-950 border border-slate-800 overflow-auto flex items-center justify-center p-2 relative">
+            <img id="map-modal-img" src="" alt="Full Resolution Map" class="max-w-none w-full h-auto object-contain min-h-full">
+        </div>
+    </div>
 
     <!-- LOG VISIT MODAL -->
     <div id="log-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
@@ -445,10 +458,8 @@
             // LOAD HIGH-RES OFFICIAL NPS BROCHURE MAP
             const parkCode = NPS_PARK_CODES[park.name] || 'yell';
             const officialNpsMapUrl = park.overall_map_url || `https://www.nps.gov/carto/app/assets/maps/${parkCode}-map.jpg`;
-            const npsOfficialPage = `https://www.nps.gov/${parkCode}/planyourvisit/maps.htm`;
 
             document.getElementById('official-nps-map-img').src = officialNpsMapUrl;
-            document.getElementById('nps-official-link').href = npsOfficialPage;
 
             // PARSE COMPLETE TRAIL DIRECTORY
             try {
@@ -490,7 +501,7 @@
 
             if (filteredHikes.length > 0) {
                 filteredHikes.forEach(h => {
-                    const trailMapUrl = h.link || `https://www.alltrails.com/search?q=${encodeURIComponent(h.name)}`;
+                    const trailImageUrl = h.map_image_url || h.link || 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=800';
                     hikesContainer.innerHTML += `
                         <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center hover:border-emerald-500/40 transition">
                             <div>
@@ -500,16 +511,27 @@
                                 </div>
                                 <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-500"></i> Distance: ${h.dist || 'N/A'}</p>
                             </div>
-                            <a href="${trailMapUrl}" target="_blank" class="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs rounded-lg border border-emerald-500/30 transition flex items-center gap-1.5 whitespace-nowrap">
-                                <span>Inspect Trail Map</span>
-                                <i class="fa-solid fa-map-location-dot"></i>
-                            </a>
+                            <button onclick="openMapModal('${trailImageUrl}', '${h.name} Trail Route')" class="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs rounded-lg border border-emerald-500/30 transition flex items-center gap-1.5 whitespace-nowrap">
+                                <span>Inspect Trail Route</span>
+                                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                            </button>
                         </div>
                     `;
                 });
             } else {
                 hikesContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-2 p-4 text-center">No trails found matching this difficulty filter.</p>`;
             }
+        }
+
+        // IN-APP LIGHTBOX MODAL HANDLERS
+        function openMapModal(imgSrc, title) {
+            document.getElementById('map-modal-img').src = imgSrc;
+            document.getElementById('map-modal-title').innerHTML = `<i class="fa-solid fa-map mr-2"></i> ${title}`;
+            document.getElementById('map-modal').classList.remove('hidden');
+        }
+
+        function closeMapModal() {
+            document.getElementById('map-modal').classList.add('hidden');
         }
 
         async function fetchYouTubeVideoForPark(parkName) {
