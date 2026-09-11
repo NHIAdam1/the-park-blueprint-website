@@ -67,14 +67,14 @@
             <section class="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg relative overflow-hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
                     <h2 class="text-xs font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-2">
-                        <i class="fa-solid fa-map-location-dot"></i> Interactive National & State Parks Locator Map
+                        <i class="fa-solid fa-map-location-dot"></i> Official Topographic Park Directory Map
                     </h2>
                     <div class="flex items-center gap-4 text-[11px] font-semibold text-slate-600">
                         <span class="flex items-center gap-1.5"><span class="w-3 h-4 bg-amber-800 rounded-sm inline-block"></span> National Park (Arrowhead)</span>
                         <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-700 rounded-sm inline-block"></span> State Park (Tree Shield)</span>
                     </div>
                 </div>
-                <div id="map" class="w-full h-[450px] rounded-xl bg-slate-100 border border-slate-200 z-10"></div>
+                <div id="map" class="w-full h-[480px] rounded-xl bg-slate-100 border border-slate-200 z-10"></div>
             </section>
 
             <!-- FILTER BAR -->
@@ -179,13 +179,13 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-map"></i> Official Topographic Park Overview
+                                <i class="fa-solid fa-map"></i> Topographic Park & Contour View
                             </h3>
                             <button onclick="toggleFullScreen('individual-park-map')" class="text-xs text-emerald-700 font-bold hover:underline flex items-center gap-1">
                                 <i class="fa-solid fa-expand"></i> Fullscreen
                             </button>
                         </div>
-                        <p class="text-xs text-slate-500 mb-4">Zoomable topographic basemap centered on park grounds and boundary lines.</p>
+                        <p class="text-xs text-slate-500 mb-4">Official USGS Topographic map layer showing elevation lines, roads, and rivers.</p>
                         <div id="individual-park-map" class="w-full h-80 rounded-xl bg-slate-100 border border-slate-300 z-10 flex-1"></div>
                     </div>
 
@@ -193,13 +193,13 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-campground"></i> Campground & Campsite Layout Map
+                                <i class="fa-solid fa-campground"></i> Campground Grounds Map
                             </h3>
                             <button onclick="toggleFullScreen('campsite-park-map')" class="text-xs text-emerald-700 font-bold hover:underline flex items-center gap-1">
                                 <i class="fa-solid fa-expand"></i> Fullscreen
                             </button>
                         </div>
-                        <p class="text-xs text-slate-500 mb-4">Detailed topographic map centered on campground zones and RV facilities.</p>
+                        <p class="text-xs text-slate-500 mb-4">Topographic view centered on major campground grounds and RV zones.</p>
                         <div id="campsite-park-map" class="w-full h-80 rounded-xl bg-slate-100 border border-slate-300 z-10 flex-1"></div>
                     </div>
                 </div>
@@ -211,7 +211,7 @@
                             <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
                                 <i class="fa-solid fa-person-hiking"></i> Complete Trail Directory (<span id="trail-count">0</span> Trails Available)
                             </h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Click any trail to open an in-app guide with distance, elevation profile, and map route.</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Click any trail to open an in-app guide with elevation chart, distance, and topo map.</p>
                         </div>
                         <select id="trail-diff-filter" onchange="filterTrailsByDifficulty()" class="bg-slate-50 border border-slate-300 text-xs text-slate-800 rounded-xl p-2.5 focus:outline-none">
                             <option value="ALL">All Difficulties (Easy, Moderate, Hard)</option>
@@ -287,11 +287,11 @@
             <!-- ELEVATION PROFILE CHART -->
             <div>
                 <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-area"></i> Trail Elevation Profile
+                    <i class="fa-solid fa-chart-area"></i> Trail Elevation Profile & Contour Map
                 </h4>
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center">
                     <svg class="w-full h-32 text-emerald-600" viewBox="0 0 500 100" preserveAspectRatio="none">
-                        <path d="M0,80 Q70,20 150,60 T300,30 T450,75 L500,85 L500,100 L0,100 Z" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="3"></path>
+                        <path d="M0,80 Q70,15 150,50 T300,20 T450,70 L500,85 L500,100 L0,100 Z" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="3"></path>
                     </svg>
                     <div class="w-full flex justify-between text-[10px] text-slate-500 font-bold mt-2 px-1">
                         <span>Trailhead</span>
@@ -308,7 +308,7 @@
                     <p id="modal-trail-desc" class="text-xs text-slate-700 leading-relaxed">Follow official trail markers carefully. Stay on boardwalks around geothermal features and keep a safe distance from wildlife.</p>
                 </div>
                 <div>
-                    <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Interactive Trail Topo Map</h4>
+                    <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Interactive Route Topo Map</h4>
                     <div id="modal-trail-map" class="w-full h-56 rounded-xl bg-slate-100 border border-slate-300 z-10"></div>
                 </div>
             </div>
@@ -405,7 +405,7 @@
         let currentLoadedHikes = [];
         let currentSelectedPark = null;
 
-        // HARDCODED MASTER DATABASE FOR ALL NATIONAL AND STATE PARKS
+        // HARDCODED MASTER DATABASE COVERING ALL NATIONAL AND STATE PARKS
         const MASTER_PARK_DATABASE = {
             "Yellowstone": {
                 lat: 44.4280, lng: -110.5885, state: "WY", type: "National",
@@ -460,7 +460,11 @@
                 hikes: [
                     { name: "Fall Creek Falls Overlook Trail", dist: "1.2 mi", diff: "Easy", elev: "180 ft", area: "Main Falls Area", desc: "Short walk to dramatic gorge overlooks.", nps: "https://tnstateparks.com/parks/fall-creek-falls" }
                 ]
-            }
+            },
+            "Acadia": { lat: 44.3386, lng: -68.2733, state: "ME", type: "National", desc: "Granite peaks, woodland trails, and ocean views along the Maine coast.", history: "<p>Acadia protects the natural beauty of the highest rocky headlands along the Atlantic coastline.</p>", hikes: [{ name: "Beehive Loop Trail", dist: "1.4 mi", diff: "Hard", elev: "450 ft", area: "Sand Beach", desc: "Iron rung cliffside climb.", nps: "https://www.nps.gov/acad" }] },
+            "Grand Teton": { lat: 43.7904, lng: -110.6818, state: "WY", type: "National", desc: "Extraordinary mountain landscape dominated by the jagged Teton Range.", history: "<p>Rising abruptly from Jackson Hole, the Teton range features pristine lakes and granite spires.</p>", hikes: [{ name: "Cascade Canyon Trail", dist: "9.1 mi", diff: "Moderate", elev: "1,100 ft", area: "Jenny Lake", desc: "Classic canyon hike past Hidden Falls.", nps: "https://www.nps.gov/grte" }] },
+            "Glacier": { lat: 48.7596, lng: -113.7870, state: "MT", type: "National", desc: "Pristine forests, alpine meadows, rugged mountains, and spectacular glacial lakes.", history: "<p>Glacier National Park offers over 700 miles of trails in Montana's Rocky Mountains.</p>", hikes: [{ name: "Highline Trail", dist: "11.8 mi", diff: "Hard", elev: "1,950 ft", area: "Logan Pass", desc: "Cliff-hanging ledge path with mountain vistas.", nps: "https://www.nps.gov/glac" }] },
+            "Rocky Mountain": { lat: 40.3428, lng: -105.6836, state: "CO", type: "National", desc: "High-altitude alpine tundra, wildflower fields, and dramatic mountain peaks.", history: "<p>Showcases Colorado's majestic mountain environments across Trail Ridge Road.</p>", hikes: [{ name: "Sky Pond Trail", dist: "9.4 mi", diff: "Hard", elev: "1,780 ft", area: "Bear Lake", desc: "Hike past timberline waterfalls to a glacial basin.", nps: "https://www.nps.gov/romo" }] }
         };
 
         async function init() {
@@ -504,10 +508,10 @@
             
             parkMap = L.map('map').setView([39.8283, -98.5795], 4);
 
-            // ESRI HIGH DEFINITION TOPOGRAPHIC BASEMAP
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-                maxZoom: 18
+            // USGS TOPOGRAPHIC TILE LAYER
+            L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles courtesy of the &copy; USGS National Map',
+                maxZoom: 16
             }).addTo(parkMap);
 
             const npsIcon = L.divIcon({
@@ -562,6 +566,12 @@
                 parkSelect.value = found.park_id || found.id;
             }
             loadSelectedParkByName(parkName);
+        }
+
+        function selectParkFromMap(parkId) {
+            const parkSelect = document.getElementById('filter-park');
+            parkSelect.value = parkId;
+            loadSelectedPark();
         }
 
         function applyFilters() {
@@ -631,7 +641,7 @@
         function updateIndividualParkMap(lat, lng, parkName) {
             if (!individualParkMap) {
                 individualParkMap = L.map('individual-park-map').setView([lat, lng], 11);
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(individualParkMap);
+                L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(individualParkMap);
             } else {
                 individualParkMap.setView([lat, lng], 11);
             }
@@ -649,7 +659,7 @@
         function updateCampsiteParkMap(lat, lng, parkName) {
             if (!campsiteParkMap) {
                 campsiteParkMap = L.map('campsite-park-map').setView([lat + 0.01, lng + 0.01], 13);
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(campsiteParkMap);
+                L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(campsiteParkMap);
             } else {
                 campsiteParkMap.setView([lat + 0.01, lng + 0.01], 13);
             }
@@ -719,7 +729,7 @@
             setTimeout(() => {
                 if (!modalTrailMap) {
                     modalTrailMap = L.map('modal-trail-map').setView([master.lat, master.lng], 13);
-                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(modalTrailMap);
+                    L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(modalTrailMap);
                 } else {
                     modalTrailMap.setView([master.lat, master.lng], 13);
                 }
