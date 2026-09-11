@@ -255,7 +255,7 @@
         }
 
         async function fetchParks() {
-            const { data } = await supabase.from('parks').select('*');
+            const { data } = await dbClient.from('parks').select('*');
             allParksData = data || [];
             
             const states = [...new Set(allParksData.map(p => p.state))].sort();
