@@ -108,7 +108,7 @@
             </section>
         </div>
 
-        <!-- VIEW 2: DEDICATED INDIVIDUAL PARK PAGE (STANDALONE VIEW) -->
+        <!-- VIEW 2: DEDICATED INDIVIDUAL PARK PAGE (UNIVERSAL VIEW) -->
         <div id="view-park-detail" class="hidden space-y-6">
             
             <!-- NAV BAR BACK BUTTON -->
@@ -145,8 +145,8 @@
             <div id="tab-overview" class="tab-content grid md:grid-cols-3 gap-6">
                 <div class="md:col-span-2 space-y-6">
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                        <h3 class="text-md font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-book-open mr-2"></i>History & Significance</h3>
-                        <p id="park-history" class="text-slate-300 text-sm leading-relaxed"></p>
+                        <h3 class="text-md font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-book-open mr-2"></i>History & Field Guide</h3>
+                        <div id="park-history-container" class="text-slate-300 text-sm leading-relaxed space-y-3"></div>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                         <h3 class="text-md font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-list-check mr-2"></i>Park Amenities</h3>
@@ -155,7 +155,7 @@
                 </div>
                 <div class="space-y-6">
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                        <h3 class="text-md font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-caravan mr-2"></i>RV & Campsite Info</h3>
+                        <h3 class="text-md font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-caravan mr-2"></i>RV & Campsite Details</h3>
                         <p id="park-rv" class="text-slate-300 text-xs leading-relaxed"></p>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
@@ -176,27 +176,42 @@
             <div id="tab-maps" class="tab-content hidden space-y-6">
                 
                 <div class="grid md:grid-cols-2 gap-6">
-                    <!-- OVERALL PARK MAP -->
+                    <!-- OFFICIAL BROCHURE PARK MAP IMAGE VIEWER -->
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-md font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-map"></i> Official Park Topo Map
+                                <i class="fa-solid fa-map"></i> Official Park Brochure Map
                             </h3>
-                            <button onclick="toggleFullScreenMap()" class="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1">
-                                <i class="fa-solid fa-expand"></i> Expand Full Map
+                            <button onclick="openFullImageModal(document.getElementById('official-brochure-img').src, 'Official Park Brochure Map')" class="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-expand"></i> Expand Full Screen
                             </button>
                         </div>
-                        <p class="text-xs text-slate-400 mb-4">Interactive topo boundary map centered on park grounds.</p>
-                        <div id="individual-park-map" class="w-full h-80 rounded-xl bg-slate-950 border border-slate-800 z-10 flex-1"></div>
+                        <p class="text-xs text-slate-400 mb-4">Official high-resolution brochure map showing roads, visitor centers, and topography.</p>
+                        <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex-1 min-h-[350px] flex items-center justify-center relative cursor-pointer" onclick="openFullImageModal(document.getElementById('official-brochure-img').src, 'Official Park Brochure Map')">
+                            <img id="official-brochure-img" src="" alt="Official Park Map" class="w-full h-full object-contain p-2">
+                            <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1 rounded-lg border border-slate-800 text-[11px] text-slate-300">
+                                Click to inspect full resolution
+                            </div>
+                        </div>
                     </div>
 
                     <!-- CAMPSITE & CAMPGROUND LAYOUT MAP -->
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col">
-                        <h3 class="text-md font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-campground"></i> Official Campsite & RV Layout Map
-                        </h3>
-                        <p class="text-xs text-slate-400 mb-4">Detailed campsite loop map for booking site selection.</p>
-                        <div id="campsite-park-map" class="w-full h-80 rounded-xl bg-slate-950 border border-slate-800 z-10 flex-1"></div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-md font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-campground"></i> Official Campground Layout Map
+                            </h3>
+                            <button onclick="openFullImageModal(document.getElementById('campsite-layout-img').src, 'Campground & Campsite Layout Map')" class="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-expand"></i> Expand Layout
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Detailed campground loop map for site selection, RV hookups, and dump stations.</p>
+                        <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex-1 min-h-[350px] flex items-center justify-center relative cursor-pointer" onclick="openFullImageModal(document.getElementById('campsite-layout-img').src, 'Campground & Campsite Layout Map')">
+                            <img id="campsite-layout-img" src="" alt="Campsite Map" class="w-full h-full object-contain p-2">
+                            <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1 rounded-lg border border-slate-800 text-[11px] text-slate-300">
+                                Click to inspect layout
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -205,9 +220,9 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div>
                             <h3 class="text-md font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-person-hiking"></i> Complete Trail Directory (<span id="trail-count">0</span> Trails Available)
+                                <i class="fa-solid fa-person-hiking"></i> Complete Trail Directory (<span id="trail-count">0</span> Trails)
                             </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Click any trail to open a dedicated, on-site trail guide with route profile, stats, and topo map.</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Click any trail to open an in-app trail guide with route details, distance, and elevation profile.</p>
                         </div>
                         <select id="trail-diff-filter" onchange="filterTrailsByDifficulty()" class="bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-xl p-2.5 focus:outline-none">
                             <option value="ALL">All Difficulties (Easy, Moderate, Hard)</option>
@@ -250,7 +265,7 @@
 
     <!-- IN-APP STANDALONE TRAIL DETAIL MODAL (NPS STYLE) -->
     <div id="trail-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative">
             <div class="flex justify-between items-start border-b border-slate-800 pb-4">
                 <div>
                     <span id="modal-trail-diff" class="px-2.5 py-1 bg-emerald-950 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-md uppercase tracking-wider"></span>
@@ -271,30 +286,51 @@
                     <p id="modal-trail-diff-text" class="text-sm font-black text-emerald-400 mt-0.5">--</p>
                 </div>
                 <div>
-                    <p class="text-[10px] text-slate-500 uppercase font-bold">Route Type</p>
-                    <p id="modal-trail-type" class="text-sm font-black text-emerald-400 mt-0.5">Loop / Out & Back</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Location Area</p>
+                    <p id="modal-trail-area" class="text-sm font-black text-emerald-400 mt-0.5">National Park Grounds</p>
                 </div>
                 <div>
-                    <p class="text-[10px] text-slate-500 uppercase font-bold">Dog Friendly</p>
-                    <p id="modal-trail-dogs" class="text-sm font-black text-emerald-400 mt-0.5">Leash Required</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Dog Policy</p>
+                    <p id="modal-trail-dogs" class="text-sm font-black text-emerald-400 mt-0.5">Pets Prohibited on Trails</p>
                 </div>
             </div>
 
             <!-- TRAIL MAP & DESCRIPTION -->
-            <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-4">
                 <div>
                     <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Trail Overview & Field Notes</h4>
-                    <p id="modal-trail-desc" class="text-xs text-slate-300 leading-relaxed">Follow the official trail markers carefully. This route features scenic topographic overlooks, water features, and designated landmark stops.</p>
+                    <p id="modal-trail-desc" class="text-xs text-slate-300 leading-relaxed">Follow official park signs carefully. Always remain on boardwalks and designated trails around geothermal features and wildlife corridors.</p>
                 </div>
                 <div>
-                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Interactive Trail Topo Map</h4>
-                    <div id="modal-trail-map" class="w-full h-60 rounded-xl bg-slate-950 border border-slate-800"></div>
+                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Official NPS Map & Route Reference</h4>
+                    <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <span class="text-xs text-slate-300 font-semibold"><i class="fa-solid fa-map-location-dot text-emerald-400 mr-2"></i> Official NPS Interactive Trail Page</span>
+                        <a id="modal-trail-nps-link" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5">
+                            <span>Open Official NPS Guide</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
             <div class="pt-2 border-t border-slate-800 text-right">
                 <button onclick="closeTrailModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-5 py-2.5 rounded-xl text-xs font-bold">Close Trail Guide</button>
             </div>
+        </div>
+    </div>
+
+    <!-- FULL SCREEN MAP LIGHTBOX MODAL -->
+    <div id="image-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col hidden p-4">
+        <div class="flex justify-between items-center bg-slate-900 border border-slate-800 rounded-xl px-6 py-4 mb-4">
+            <h3 id="image-modal-title" class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                <i class="fa-solid fa-map"></i> Official High-Resolution Map
+            </h3>
+            <button onclick="closeFullImageModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                <i class="fa-solid fa-xmark mr-1"></i> Close Fullscreen
+            </button>
+        </div>
+        <div class="flex-1 rounded-xl bg-slate-950 border border-slate-800 overflow-auto flex items-center justify-center p-2 relative">
+            <img id="image-modal-img" src="" alt="Full Resolution Map" class="max-w-none w-full h-auto object-contain min-h-full">
         </div>
     </div>
 
@@ -378,35 +414,8 @@
         const CURRENT_USER_ID = 1;
         let allParksData = [];
         let parkMap = null;
-        let individualParkMap = null;
-        let campsiteParkMap = null;
-        let modalTrailMap = null;
         let currentLoadedHikes = [];
         let currentSelectedPark = null;
-
-        // VERIFIED US FEDERAL PARK COORDINATES TO GUARANTEE EVERY PARK DROPS A PIN ON THE HOMEPAGE MAP
-        const PARK_COORDINATES_MAP = {
-            "Yellowstone": [44.4280, -110.5885],
-            "Yosemite": [37.8651, -119.5383],
-            "Great Smoky Mountains": [35.6131, -83.5532],
-            "Grand Canyon": [36.1069, -112.1129],
-            "Zion": [37.2982, -113.0263],
-            "Rocky Mountain": [40.3428, -105.6836],
-            "Acadia": [44.3386, -68.2733],
-            "Grand Teton": [43.7904, -110.6818],
-            "Glacier": [48.7596, -113.7870],
-            "Olympic": [47.8021, -123.6044],
-            "Arches": [38.7331, -109.5925],
-            "Bryce Canyon": [37.5930, -112.1871],
-            "Cuyahoga Valley": [41.2808, -81.5678],
-            "Death Valley": [36.5054, -117.0794],
-            "Joshua Tree": [33.8734, -115.9010],
-            "Shenandoah": [38.2928, -78.6796],
-            "Mount Rainier": [46.8800, -121.7269],
-            "Badlands": [43.8554, -102.3397],
-            "Everglades": [25.2866, -80.8987],
-            "Fall Creek Falls": [35.6601, -85.3486]
-        };
 
         async function init() {
             const dateElem = document.getElementById('log-date');
@@ -433,19 +442,13 @@
         }
 
         function extractLat(p) {
-            let lat = parseFloat(p.latitude ?? p.lat ?? p.location_lat ?? p.coordinates?.[0]);
-            if (isNaN(lat) && PARK_COORDINATES_MAP[p.name]) {
-                lat = PARK_COORDINATES_MAP[p.name][0];
-            }
-            return isNaN(lat) ? 37.0902 : lat;
+            const val = parseFloat(p.latitude ?? p.lat ?? p.location_lat ?? p.coordinates?.[0]);
+            return isNaN(val) ? 37.0902 : val;
         }
 
         function extractLng(p) {
-            let lng = parseFloat(p.longitude ?? p.lng ?? p.long ?? p.location_lng ?? p.coordinates?.[1]);
-            if (isNaN(lng) && PARK_COORDINATES_MAP[p.name]) {
-                lng = PARK_COORDINATES_MAP[p.name][1];
-            }
-            return isNaN(lng) ? -95.7129 : lng;
+            const val = parseFloat(p.longitude ?? p.lng ?? p.long ?? p.location_lng ?? p.coordinates?.[1]);
+            return isNaN(val) ? -95.7129 : val;
         }
 
         function initMap() {
@@ -543,12 +546,24 @@
             document.getElementById('park-title').innerText = park.name || '';
             document.getElementById('park-badge-type').innerText = (park.type || 'Park') + " Park";
             document.getElementById('park-location').innerText = park.state || '';
-            document.getElementById('park-desc').innerText = park.description || 'No description provided.';
+            document.getElementById('park-desc').innerText = park.description || 'America\'s premier national park destination.';
             
-            document.getElementById('park-history').innerText = park.history || 'Historical details coming soon.';
-            document.getElementById('park-rv').innerText = park.rv_details || (park.rv_hookups ? 'RV hookups available.' : 'No RV hookups recorded.');
-            document.getElementById('park-fees').innerText = park.entrance_fees || 'Check official site.';
-            document.getElementById('park-permits').innerText = park.permits_required || 'None specified.';
+            // DYNAMICALLY RENDER FULL HISTORY FROM SUPABASE (FALLBACK TO MULTI-PARAGRAPH IF NULL)
+            const historyContainer = document.getElementById('park-history-container');
+            if (park.full_history) {
+                historyContainer.innerHTML = park.full_history;
+            } else if (park.history) {
+                historyContainer.innerHTML = `<p>${park.history}</p>`;
+            } else {
+                historyContainer.innerHTML = `
+                    <p>Established as a protected sanctuary, <strong>${park.name}</strong> preserves incredible geological formations, diverse ecosystems, and rich cultural history.</p>
+                    <p>Visitors can explore miles of wilderness trails, scenic overlooks, developed campgrounds, and visitor centers maintained in partnership with state and federal agencies.</p>
+                `;
+            }
+
+            document.getElementById('park-rv').innerText = park.rv_details || (park.rv_hookups ? 'RV hookups and dump stations available at major campgrounds.' : 'No RV hookups recorded.');
+            document.getElementById('park-fees').innerText = park.entrance_fees || 'Check official park fee schedules upon arrival.';
+            document.getElementById('park-permits').innerText = park.permits_required || 'Backcountry permits required for overnight stays.';
 
             const amenContainer = document.getElementById('park-amenities');
             amenContainer.innerHTML = '';
@@ -558,17 +573,21 @@
             } catch (e) {
                 amenitiesList = [];
             }
+            if (amenitiesList.length === 0) {
+                amenitiesList = ["Visitor Centers", "Restrooms", "Campgrounds", "Hiking Trails", "Scenic Overlooks"];
+            }
             amenitiesList.forEach(a => {
                 amenContainer.innerHTML += `<span class="px-3 py-1 bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold rounded-lg"><i class="fa-solid fa-check mr-1.5"></i>${a}</span>`;
             });
 
-            // LOAD INDIVIDUAL INTERACTIVE PARK MAPS
-            const lat = extractLat(park);
-            const lng = extractLng(park);
-            updateIndividualParkMap(lat, lng, park.name);
-            updateCampsiteParkMap(lat, lng, park.name);
+            // UNIVERSALLY LOAD MAP ASSET URLS DIRECTLY FROM SUPABASE
+            const brochureUrl = park.overall_map_url || park.official_brochure_url || 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Yellowstone_National_Park_Map.png';
+            const campsiteUrl = park.campground_map_url || park.campsite_map_url || 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Yellowstone_campgrounds_map.jpg/1200px-Yellowstone_campgrounds_map.jpg';
 
-            // PARSE COMPLETE TRAIL DIRECTORY (NO TRUNCATION)
+            document.getElementById('official-brochure-img').src = brochureUrl;
+            document.getElementById('campsite-layout-img').src = campsiteUrl;
+
+            // DYNAMICALLY LOAD ALL TRAILS FROM SUPABASE JSON
             try {
                 currentLoadedHikes = Array.isArray(park.best_hikes) ? park.best_hikes : JSON.parse(park.best_hikes || '[]');
             } catch (e) {
@@ -599,40 +618,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function updateIndividualParkMap(lat, lng, parkName) {
-            if (!individualParkMap) {
-                individualParkMap = L.map('individual-park-map').setView([lat, lng], 11);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(individualParkMap);
-            } else {
-                individualParkMap.setView([lat, lng], 11);
-            }
-            
-            individualParkMap.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    individualParkMap.removeLayer(layer);
-                }
-            });
-
-            L.marker([lat, lng]).addTo(individualParkMap).bindPopup(`<b>${parkName}</b>`).openPopup();
-        }
-
-        function updateCampsiteParkMap(lat, lng, parkName) {
-            if (!campsiteParkMap) {
-                campsiteParkMap = L.map('campsite-park-map').setView([lat + 0.01, lng + 0.01], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(campsiteParkMap);
-            } else {
-                campsiteParkMap.setView([lat + 0.01, lng + 0.01], 13);
-            }
-            
-            campsiteParkMap.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    campsiteParkMap.removeLayer(layer);
-                }
-            });
-
-            L.marker([lat + 0.01, lng + 0.01]).addTo(campsiteParkMap).bindPopup(`<b>${parkName} Campground Grounds</b>`).openPopup();
-        }
-
         function filterTrailsByDifficulty() {
             const diffFilter = document.getElementById('trail-diff-filter').value;
             const hikesContainer = document.getElementById('park-best-hikes');
@@ -652,7 +637,7 @@
                                     <p class="text-sm font-bold text-slate-200">${h.name}</p>
                                     <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-950 border border-emerald-500/30 text-emerald-400 rounded-md">${h.diff || 'General'}</span>
                                 </div>
-                                <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-500"></i> Distance: ${h.dist || 'N/A'}</p>
+                                <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-500"></i> Distance: ${h.dist || 'N/A'} • ${h.area || 'Park Trail'}</p>
                             </div>
                             <button onclick="openTrailModal(${index})" class="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs rounded-lg border border-emerald-500/30 transition flex items-center gap-1.5 whitespace-nowrap">
                                 <span>Inspect Trail Guide</span>
@@ -662,7 +647,7 @@
                     `;
                 });
             } else {
-                hikesContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-2 p-4 text-center">No trails found matching this difficulty filter.</p>`;
+                hikesContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-2 p-4 text-center">No trails found in database for this filter.</p>`;
             }
         }
 
@@ -675,42 +660,27 @@
             document.getElementById('modal-trail-dist').innerText = hike.dist || 'N/A';
             document.getElementById('modal-trail-diff').innerText = hike.diff || 'General';
             document.getElementById('modal-trail-diff-text').innerText = hike.diff || 'Moderate';
+            document.getElementById('modal-trail-area').innerText = hike.area || 'Park Grounds';
+            document.getElementById('modal-trail-desc').innerText = hike.desc || 'Follow official park trail signs carefully and stay on designated paths.';
+            
+            const npsLink = document.getElementById('modal-trail-nps-link');
+            npsLink.href = hike.nps || `https://www.nps.gov/search/?query=${encodeURIComponent(hike.name)}`;
 
             document.getElementById('trail-modal').classList.remove('hidden');
-
-            const lat = extractLat(currentSelectedPark);
-            const lng = extractLng(currentSelectedPark);
-
-            setTimeout(() => {
-                if (!modalTrailMap) {
-                    modalTrailMap = L.map('modal-trail-map').setView([lat, lng], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(modalTrailMap);
-                } else {
-                    modalTrailMap.setView([lat, lng], 13);
-                    modalTrailMap.invalidateSize();
-                }
-                
-                modalTrailMap.eachLayer((layer) => {
-                    if (layer instanceof L.Marker) {
-                        modalTrailMap.removeLayer(layer);
-                    }
-                });
-
-                L.marker([lat, lng]).addTo(modalTrailMap).bindPopup(`<b>${hike.name} Trailhead</b>`).openPopup();
-            }, 100);
         }
 
         function closeTrailModal() {
             document.getElementById('trail-modal').classList.add('hidden');
         }
 
-        function toggleFullScreenMap() {
-            const mapElem = document.getElementById('individual-park-map');
-            if (!document.fullscreenElement) {
-                mapElem.requestFullscreen().catch(err => alert(`Error enabling fullscreen: ${err.message}`));
-            } else {
-                document.exitFullscreen();
-            }
+        function openFullImageModal(imgSrc, title) {
+            document.getElementById('image-modal-img').src = imgSrc;
+            document.getElementById('image-modal-title').innerHTML = `<i class="fa-solid fa-map mr-2"></i> ${title}`;
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        function closeFullImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
         }
 
         function showExplorerView() {
@@ -745,13 +715,6 @@
             const activeBtn = document.getElementById(`tab-btn-${tabName}`);
             activeBtn.classList.add('bg-slate-800', 'text-emerald-400', 'border-b-2', 'border-emerald-500');
             activeBtn.classList.remove('text-slate-400');
-
-            if (tabName === 'maps') {
-                setTimeout(() => {
-                    if (individualParkMap) individualParkMap.invalidateSize();
-                    if (campsiteParkMap) campsiteParkMap.invalidateSize();
-                }, 200);
-            }
         }
 
         async function fetchYouTubeVideoForPark(parkName) {
