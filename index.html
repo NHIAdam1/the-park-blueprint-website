@@ -379,7 +379,7 @@
         }
 
         async function renderBadgePassport() {
-            const { data: badges } = await supabase.from('badges').select('*');
+            cconst { data } = await dbClient.from('badges').select('*');
             const { data: earned } = await supabase.from('user_badges').select('badge_id').eq('user_id', CURRENT_USER_ID);
             const { data: logs } = await supabase.from('activity_logs').select('activity_type').eq('user_id', CURRENT_USER_ID);
 
