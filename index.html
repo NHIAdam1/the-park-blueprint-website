@@ -484,5 +484,112 @@
 
         init();
     </script>
+    <script>
+  // SUPABASE CONFIGURATION
+  const SUPABASE_URL = "https://vllskkymhivyqfxlolja.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbHNra3ltaGl2eXFmeGxvbGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5OTM5ODAsImV4cCI6MjEwNDU2OTk4MH0.Vtfs9XC_rShQqsxL2ZlktACEaBfY2C-JCVt5mMZYGL8";
+
+  // AUTOMATED YOUTUBE INTEGRATION CONFIG
+  const YOUTUBE_API_KEY = "";
+  const YOUTUBE_CHANNEL_HANDLE = "@TheParkBlueprint";
+
+  // INITIALIZE SUPABASE CLIENT
+  const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const CURRENT_USER_ID = null;
+  let allParksData = [];
+
+  // INITIALIZE APPLICATION
+  async function init() {
+    document.getElementById("view-explorer").classList.remove("hidden");
+    await fetchParks();
+    await renderBadgePassport();
+  }
+
+  // FETCH PARKS FROM SUPABASE
+  async function fetchParks() {
+    const { data, error } = await dbClient.from('parks').select('*');
+    if (error) {
+      console.error("Error fetching parks:", error);
+      return;
+    }
+    
+    allParksData = data || [];
+    
+    // Populate State Dropdown
+    const states = [...new Set(allParksData.map(p => p.state))].sort();
+    const stateSelect = document.getElementById("filter-state");
+    stateSelect.innerHTML = '<option value="ALL">All States</option>';
+    states.forEach(st => {
+      stateSelect.innerHTML += `<option value="${st}">${st}</option>`;
+    });
+
+    applyFilters();
+  }
+
+  // FILTER LOGIC
+  function applyFilters() {
+    const typeVal = document.getElementById("filter-type").value;
+    const stateVal = document.getElementById("filter-state").value;
+    const parkSelect = document.getElementById("filter-park");
+
+    const filtered = allParksData.filter(p => {
+      const matchType = (typeVal === "ALL") || (p.type === typeVal);
+      const matchState = (stateVal === "ALL") || (p.state === stateVal);
+      return matchType && matchState;
+    });
+
+    parkSelect.innerHTML = '<option value="">-- Choose Park --</option>';
+    filtered.forEach(p => {
+      parkSelect.innerHTML += `<option value="${p.id}">${p.name} (${p.state})</option>`;
+    });
+  }
+
+  // VIEW NAVIGATION
+  function switchView(viewName) {
+    const expView = document.getElementById("view-explorer");
+    const bdgView = document.getElementById("view-badges");
+    const navExp = document.getElementById("nav-explorer");
+    const navBdg = document.getElementById("nav-badges");
+
+    if (viewName === 'explorer') {
+      expView.classList.remove("hidden");
+      bdgView.classList.add("hidden");
+      navExp.className = "px-4 py-2 rounded-xl text-sm font-bold bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400";
+      navBdg.className = "px-4 py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+    } else {
+      expView.classList.add("hidden");
+      bdgView.classList.remove("hidden");
+      navBdg.className = "px-4 py-2 rounded-xl text-sm font-bold bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400";
+      navExp.className = "px-4 py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+    }
+  }
+
+  // RENDER BADGES
+  async function renderBadgePassport() {
+    const { data, error } = await dbClient.from('badges').select('*');
+    if (error) {
+      console.error("Error fetching badges:", error);
+      return;
+    }
+    const container = document.getElementById("badge-grid");
+    if (!container) return;
+    
+    container.innerHTML = "";
+    (data || []).forEach(b => {
+      container.innerHTML += `
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-2xl mb-2">${b.icon || '🌲'}</div>
+          <h4 class="font-bold text-slate-200 text-sm">${b.title}</h4>
+          <p class="text-xs text-slate-400 mt-1">${b.description || ''}</p>
+        </div>
+      `;
+    });
+  }
+
+  // RUN ON LOAD
+  window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
 </body>
 </html>
