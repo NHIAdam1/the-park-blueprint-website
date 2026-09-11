@@ -553,9 +553,9 @@
                 grid.innerHTML += `
                     <div class="bg-slate-900 border ${isUnlocked ? 'border-emerald-500/50 bg-emerald-950/10' : 'border-slate-800 opacity-60'} rounded-2xl p-5 flex flex-col justify-between">
                         <div class="flex items-center gap-4 mb-4">
-                            <img src="${badge.icon_url \vert{}\vert{} 'https://via.placeholder.com/50'}" class="w-14 h-14 ${isUnlocked ? '' : 'grayscale'}">
+                            <img src="${badge.icon_url || 'https://via.placeholder.com/50'}" class="w-14 h-14 ${isUnlocked ? '' : 'grayscale'}">
                             <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider ${isUnlocked ? 'text-emerald-400' : 'text-slate-500'}">${badge.tier \vert{}\vert{} 'Standard'} Tier • ${badge.category || 'General'}</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider ${isUnlocked ? 'text-emerald-400' : 'text-slate-500'}">${badge.tier || 'Standard'} Tier • ${badge.category || 'General'}</span>
                                 <h4 class="text-base font-bold text-slate-100">${badge.name || badge.title}</h4>
                                 <p class="text-xs text-slate-400 mt-0.5">${badge.description || ''}</p>
                             </div>
@@ -563,7 +563,7 @@
                         <div>
                             <div class="flex justify-between text-[10px] font-semibold text-slate-400 mb-1">
                                 <span>${isUnlocked ? 'Unlocked!' : 'Progress'}</span>
-                                <span>${currentCount} /${reqCount} Logged</span>
+                                <span>${currentCount} / ${reqCount} Logged</span>
                             </div>
                             <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
                                 <div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${percent}%"></div>
