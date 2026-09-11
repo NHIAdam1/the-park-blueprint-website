@@ -45,7 +45,7 @@
             <!-- INTERACTIVE MAP DISPLAY -->
             <section class="bg-slate-900 border border-emerald-900/30 rounded-2xl p-4 shadow-2xl relative overflow-hidden">
                 <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-map-location-dot"></i> National Parks Map
+                    <i class="fa-solid fa-map-location-dot"></i> National Parks Locator Map
                 </h2>
                 <div id="map" class="w-full h-96 rounded-xl bg-slate-950 border border-slate-800 z-10"></div>
             </section>
@@ -101,7 +101,7 @@
                 <!-- PARK TABS HEADER -->
                 <div class="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1">
                     <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Overview & Amenities</button>
-                    <button onclick="switchTab('maps')" id="tab-btn-maps" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Embedded Maps & Complete Trail Directory</button>
+                    <button onclick="switchTab('maps')" id="tab-btn-maps" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Official NPS Maps & Complete Trails</button>
                     <button onclick="switchTab('media')" id="tab-btn-media" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Video Guides</button>
                     <button onclick="switchTab('feed')" id="tab-btn-feed" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Community Field Notes</button>
                 </div>
@@ -137,19 +137,31 @@
                     </div>
                 </div>
 
-                <!-- TAB 2: EMBEDDED MAPS & COMPLETE TRAIL DIRECTORY -->
+                <!-- TAB 2: OFFICIAL NPS BROCHURE MAPS & TRAILS -->
                 <div id="tab-maps" class="tab-content hidden space-y-6">
                     
-                    <!-- IN-PAGE EMBEDDED MAP VIEWERS -->
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                            <h3 class="text-xs font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-map mr-2"></i>1. Park Topo & Boundary Map</h3>
-                            <div id="embedded-park-map" class="w-full h-80 rounded-xl bg-slate-950 border border-slate-800 z-10"></div>
+                    <!-- OFFICIAL PARK BROCHURE MAP DISPLAY -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                            <div>
+                                <h3 class="text-md font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-map"></i> Official Topographic & Brochure Park Map
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">High-resolution official USGS / NPS Park map including visitor centers, roads, and topography.</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a id="nps-official-link" href="#" target="_blank" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-lg">
+                                    <i class="fa-solid fa-external-link"></i> Official NPS Maps Page
+                                </a>
+                            </div>
                         </div>
 
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                            <h3 class="text-xs font-bold text-emerald-400 mb-3 uppercase tracking-wider"><i class="fa-solid fa-caravan mr-2"></i>2. Campground & RV Map</h3>
-                            <div id="embedded-rv-map" class="w-full h-80 rounded-xl bg-slate-950 border border-slate-800 z-10"></div>
+                        <!-- CRISP IMAGE VIEWER FOR NPS BROCHURES -->
+                        <div class="rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative group min-h-[500px] flex items-center justify-center">
+                            <img id="official-nps-map-img" src="" alt="Official NPS Park Map" class="w-full h-auto max-h-[700px] object-contain cursor-zoom-in" onclick="window.open(this.src, '_blank')">
+                            <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-300">
+                                Click map to view full-resolution image
+                            </div>
                         </div>
                     </div>
 
@@ -284,9 +296,21 @@
         const CURRENT_USER_ID = 1;
         let allParksData = [];
         let parkMap = null;
-        let embeddedParkMap = null;
-        let embeddedRvMap = null;
         let currentLoadedHikes = [];
+
+        // MAP CODE LOOKUP MAP FOR OFFICIAL NPS HIGH-RES BROCHURE MAPS
+        const NPS_PARK_CODES = {
+            "Yellowstone": "yell",
+            "Yosemite": "yose",
+            "Great Smoky Mountains": "grsm",
+            "Grand Canyon": "grca",
+            "Zion": "zion",
+            "Rocky Mountain": "romo",
+            "Acadia": "acad",
+            "Grand Teton": "grte",
+            "Glacier": "glac",
+            "Olympic": "olym"
+        };
 
         async function init() {
             const dateElem = document.getElementById('log-date');
@@ -418,11 +442,13 @@
                 amenContainer.innerHTML += `<span class="px-3 py-1 bg-slate-950 border border-slate-800 text-xs text-emerald-400 font-semibold rounded-lg"><i class="fa-solid fa-check mr-1.5"></i>${a}</span>`;
             });
 
-            // RENDER EMBEDDED IN-PAGE MAPS FOR INDIVIDUAL PARK
-            const lat = extractLat(park) || 39.8283;
-            const lng = extractLng(park) || -98.5795;
+            // LOAD HIGH-RES OFFICIAL NPS BROCHURE MAP
+            const parkCode = NPS_PARK_CODES[park.name] || 'yell';
+            const officialNpsMapUrl = park.overall_map_url || `https://www.nps.gov/carto/app/assets/maps/${parkCode}-map.jpg`;
+            const npsOfficialPage = `https://www.nps.gov/${parkCode}/planyourvisit/maps.htm`;
 
-            updateEmbeddedMaps(lat, lng, park.name);
+            document.getElementById('official-nps-map-img').src = officialNpsMapUrl;
+            document.getElementById('nps-official-link').href = npsOfficialPage;
 
             // PARSE COMPLETE TRAIL DIRECTORY
             try {
@@ -452,26 +478,6 @@
             }
         }
 
-        function updateEmbeddedMaps(lat, lng, parkName) {
-            // Overall Park Embedded Map
-            if (!embeddedParkMap) {
-                embeddedParkMap = L.map('embedded-park-map').setView([lat, lng], 11);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(embeddedParkMap);
-            } else {
-                embeddedParkMap.setView([lat, lng], 11);
-            }
-            L.marker([lat, lng]).addTo(embeddedParkMap).bindPopup(`<b>${parkName}</b>`).openPopup();
-
-            // Campground / RV Embedded Map
-            if (!embeddedRvMap) {
-                embeddedRvMap = L.map('embedded-rv-map').setView([lat, lng], 12);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(embeddedRvMap);
-            } else {
-                embeddedRvMap.setView([lat, lng], 12);
-            }
-            L.marker([lat, lng]).addTo(embeddedRvMap).bindPopup(`<b>${parkName} Campgrounds</b>`);
-        }
-
         function filterTrailsByDifficulty() {
             const diffFilter = document.getElementById('trail-diff-filter').value;
             const hikesContainer = document.getElementById('park-best-hikes');
@@ -484,6 +490,7 @@
 
             if (filteredHikes.length > 0) {
                 filteredHikes.forEach(h => {
+                    const trailMapUrl = h.link || `https://www.alltrails.com/search?q=${encodeURIComponent(h.name)}`;
                     hikesContainer.innerHTML += `
                         <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center hover:border-emerald-500/40 transition">
                             <div>
@@ -493,22 +500,15 @@
                                 </div>
                                 <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-500"></i> Distance: ${h.dist || 'N/A'}</p>
                             </div>
-                            <button onclick="focusTrailOnMap('${h.name}')" class="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs rounded-lg border border-emerald-500/30 transition flex items-center gap-1.5 whitespace-nowrap">
-                                <span>Inspect Trail</span>
-                                <i class="fa-solid fa-compass"></i>
-                            </button>
+                            <a href="${trailMapUrl}" target="_blank" class="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs rounded-lg border border-emerald-500/30 transition flex items-center gap-1.5 whitespace-nowrap">
+                                <span>Inspect Trail Map</span>
+                                <i class="fa-solid fa-map-location-dot"></i>
+                            </a>
                         </div>
                     `;
                 });
             } else {
                 hikesContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-2 p-4 text-center">No trails found matching this difficulty filter.</p>`;
-            }
-        }
-
-        function focusTrailOnMap(trailName) {
-            document.getElementById('embedded-park-map').scrollIntoView({ behavior: 'smooth' });
-            if (embeddedParkMap) {
-                embeddedParkMap.setZoom(13);
             }
         }
 
@@ -633,14 +633,6 @@
             const activeBtn = document.getElementById(`tab-btn-${tabName}`);
             activeBtn.classList.add('bg-slate-800', 'text-emerald-400', 'border-b-2', 'border-emerald-500');
             activeBtn.classList.remove('text-slate-400');
-
-            // Force Leaflet map resize calculation when switching tabs
-            if (tabName === 'maps') {
-                setTimeout(() => {
-                    if (embeddedParkMap) embeddedParkMap.invalidateSize();
-                    if (embeddedRvMap) embeddedRvMap.invalidateSize();
-                }, 200);
-            }
         }
 
         function openLogModal() { document.getElementById('log-modal').classList.remove('hidden'); }
