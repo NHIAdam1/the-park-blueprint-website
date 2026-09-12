@@ -23,6 +23,26 @@
             background-position: center;
             filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
         }
+        .nps-legend {
+            width: 1.45rem;
+            height: 1.8rem;
+            flex: 0 0 auto;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/1/1d/US-NationalParkService-Shield-Logo.svg') center / contain no-repeat;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,.25));
+        }
+        .state-legend {
+            width: 1.65rem;
+            height: 1.65rem;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            border-radius: .45rem;
+            background: #15803d;
+            color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,.25);
+        }
         .state-pin {
             background-color: #15803d;
             border: 2px solid #ffffff;
@@ -56,6 +76,8 @@
         select:focus-visible,
         a:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
         #trail-elevation-path { transition: d 260ms ease; }
+        #trail-elevation-cursor { transition: x1 80ms linear, x2 80ms linear; }
+        #elevation-scrubber { accent-color: #059669; cursor: ew-resize; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen font-sans flex flex-col">
@@ -94,8 +116,8 @@
                         <i class="fa-solid fa-map-location-dot"></i> Official National & State Parks Master Directory
                     </h2>
                     <div class="flex items-center gap-4 text-[11px] font-semibold text-slate-600">
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-4 bg-amber-800 rounded-sm inline-block"></span> 63 National Parks</span>
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-emerald-700 rounded-sm inline-block"></span> Flagship Park in Every State</span>
+                        <span class="flex items-center gap-2"><span class="nps-legend" aria-hidden="true"></span> 63 National Parks</span>
+                        <span class="flex items-center gap-2"><span class="state-legend" aria-hidden="true"><i class="fa-solid fa-tree text-[10px]"></i></span> State Parks</span>
                     </div>
                 </div>
                 <div id="map" class="w-full h-[520px] rounded-xl bg-slate-100 border border-slate-200 z-10"></div>
@@ -112,12 +134,12 @@
                         <select id="filter-type" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl p-3 text-sm focus:border-emerald-600 focus:outline-none">
                             <option value="ALL">All Parks (State & National)</option>
                             <option value="National">National Parks Only (63)</option>
-                            <option value="State">State Parks Only</option>
+                            <option value="State">State Parks Only (full list by state)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs text-slate-500 mb-1 font-semibold">2. State</label>
-                        <select id="filter-state" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl p-3 text-sm focus:border-emerald-600 focus:outline-none">
+                        <select id="filter-state" onchange="handleStateFilterChange()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl p-3 text-sm focus:border-emerald-600 focus:outline-none">
                             <option value="ALL">All States</option>
                         </select>
                     </div>
@@ -128,6 +150,7 @@
                         </select>
                     </div>
                 </div>
+                <p id="state-park-load-status" class="text-xs text-slate-500 mt-3">All official Tennessee State Parks are included. Choose another state to load its complete mapped state-park directory.</p>
             </section>
         </div>
 
@@ -175,6 +198,16 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <h3 class="text-md font-bold text-emerald-800 mb-3 uppercase tracking-wider"><i class="fa-solid fa-book-open mr-2"></i>History & Comprehensive Field Guide</h3>
                         <div id="park-history-container" class="text-slate-700 text-sm leading-relaxed space-y-3"></div>
+                        <div class="mt-5 pt-5 border-t border-slate-200 grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Destination Planning</p>
+                                <p id="park-planning-summary" class="text-sm text-slate-700 leading-relaxed mt-1"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Information Sources</p>
+                                <div id="park-source-links" class="flex flex-wrap gap-2 mt-2"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <h3 class="text-md font-bold text-emerald-800 mb-3 uppercase tracking-wider"><i class="fa-solid fa-list-check mr-2"></i>Park Amenities</h3>
@@ -332,7 +365,11 @@
                     <p id="trail-elevation-status" class="text-xs text-slate-500 mb-2 self-start">Elevation loads from U.S. Geological Survey data when a mapped route is available.</p>
                     <svg class="w-full h-32 text-emerald-600" viewBox="0 0 500 100" preserveAspectRatio="none" role="img" aria-label="Trail elevation profile">
                         <path id="trail-elevation-path" d="M0,90 L500,90 L500,100 L0,100 Z" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="3"></path>
+                        <line id="trail-elevation-cursor" x1="0" y1="4" x2="0" y2="96" stroke="#f59e0b" stroke-width="4" visibility="hidden"></line>
                     </svg>
+                    <label for="elevation-scrubber" class="w-full text-xs font-bold text-slate-600 mt-2">Slide to follow the elevation on the trail map</label>
+                    <input id="elevation-scrubber" type="range" min="0" max="0" value="0" step="1" disabled oninput="scrubElevation(this.value)" class="w-full mt-2" aria-describedby="elevation-scrubber-readout">
+                    <p id="elevation-scrubber-readout" class="w-full text-xs font-bold text-emerald-800 mt-2">Select a mapped trail route to activate the elevation locator.</p>
                     <div class="w-full flex justify-between text-[10px] text-slate-500 font-bold mt-2 px-1">
                         <span>Trailhead</span>
                         <span>Midpoint Outlook</span>
@@ -346,6 +383,10 @@
                 <div>
                     <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Trail Overview & Field Notes</h4>
                     <p id="modal-trail-desc" class="text-xs text-slate-700 leading-relaxed">Follow official trail markers carefully. Stay on boardwalks around geothermal features and keep a safe distance from wildlife.</p>
+                    <dl class="grid grid-cols-2 gap-3 mt-4 text-xs">
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><dt class="font-bold text-slate-500">Route source</dt><dd id="modal-trail-source" class="font-semibold text-slate-800 mt-1">--</dd></div>
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><dt class="font-bold text-slate-500">Mapped surface</dt><dd id="modal-trail-surface" class="font-semibold text-slate-800 mt-1">--</dd></div>
+                    </dl>
                 </div>
                 <div>
                     <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-2">Interactive Trailhead Location Map</h4>
@@ -453,7 +494,11 @@
         let currentParkMapData = null;
         let activeMapRequest = 0;
         let activeElevationRequest = 0;
+        let activeElevationProfile = [];
+        let trailScrubberMarker = null;
         const parkMapCache = new Map();
+        const loadedStateParkCodes = new Set(["TN"]);
+        const stateParkLoadPromises = new Map();
 
         const TOPO_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}";
         const IMAGERY_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -462,6 +507,13 @@
             "https://overpass-api.de/api/interpreter",
             "https://overpass.kumi.systems/api/interpreter"
         ];
+        const STATE_NAMES = {
+            AL:"Alabama", AK:"Alaska", AZ:"Arizona", AR:"Arkansas", CA:"California", CO:"Colorado", CT:"Connecticut", DE:"Delaware", FL:"Florida", GA:"Georgia",
+            HI:"Hawaii", ID:"Idaho", IL:"Illinois", IN:"Indiana", IA:"Iowa", KS:"Kansas", KY:"Kentucky", LA:"Louisiana", ME:"Maine", MD:"Maryland",
+            MA:"Massachusetts", MI:"Michigan", MN:"Minnesota", MS:"Mississippi", MO:"Missouri", MT:"Montana", NE:"Nebraska", NV:"Nevada", NH:"New Hampshire", NJ:"New Jersey",
+            NM:"New Mexico", NY:"New York", NC:"North Carolina", ND:"North Dakota", OH:"Ohio", OK:"Oklahoma", OR:"Oregon", PA:"Pennsylvania", RI:"Rhode Island", SC:"South Carolina",
+            SD:"South Dakota", TN:"Tennessee", TX:"Texas", UT:"Utah", VT:"Vermont", VA:"Virginia", WA:"Washington", WV:"West Virginia", WI:"Wisconsin", WY:"Wyoming"
+        };
 
         // COMPLETE COMPREHENSIVE MASTER DATABASE CONTAINING ALL 63 US NATIONAL PARKS AND MAJOR STATE PARKS
         const MASTER_PARK_DATABASE = {
@@ -630,6 +682,94 @@
             };
         });
 
+        // Current official Tennessee State Parks directory. These entries use the
+        // park agency's coordinates, destination descriptions, and source pages.
+        const TENNESSEE_STATE_PARKS = [
+            {"name": "Bicentennial Capitol Mall", "lat": 36.170739, "lng": -86.787612, "official": "https://tnstateparks.com/parks/bicentennial-mall", "desc": "Explore the history and beauty of Bicentennial Capitol Mall, a unique Tennessee State Park in downtown Nashville. Plan your visit today!"},
+            {"name": "Big Cypress Tree Park", "lat": 36.194183, "lng": -88.890224, "official": "https://tnstateparks.com/parks/big-cypress-tree", "desc": "Discover the natural beauty of Big Cypress Tree State Park. Plan your visit to explore hiking, wildlife viewing, and the champion cypress tree."},
+            {"name": "Big Hill Pond State Park", "lat": 35.06337, "lng": -88.71973, "official": "https://tnstateparks.com/parks/big-hill-pond", "desc": "Plan your adventure at Big Hill Pond, a Tennessee State Park. Discover hiking, boating, camping, and the famous 70-foot observation tower."},
+            {"name": "Big Ridge State Park", "lat": 36.24239, "lng": -83.93068, "official": "https://tnstateparks.com/parks/big-ridge", "desc": "Discover the historic Big Ridge State Park on Norris Lake. Plan your visit for camping, hiking, and swimming at this beautiful Tennessee State Park."},
+            {"name": "Bledsoe Creek State Park", "lat": 36.37838, "lng": -86.36069, "official": "https://tnstateparks.com/parks/bledsoe-creek", "desc": "Explore the beautiful Bledsoe Creek State Park. Plan your visit for camping, hiking, and fishing on Old Hickory Lake at this Tennessee State Park."},
+            {"name": "Booker T. Washington State Park", "lat": 35.10565, "lng": -85.18345, "official": "https://tnstateparks.com/parks/booker-t-washington", "desc": "Discover the history and beauty of Booker T. Washington State Park. Plan your visit for fishing and boating on Chickamauga Lake at this Tennessee State Park."},
+            {"name": "Burgess Falls State Park", "lat": 36.04678, "lng": -85.59374, "official": "https://tnstateparks.com/parks/burgess-falls", "desc": "Discover the stunning waterfalls of Burgess Falls State Park. Plan your visit to see the cascades and enjoy the trails at this Tennessee State Park."},
+            {"name": "Cardwell Mountain State Archaeological Park", "lat": 35.70189, "lng": -85.67738, "official": "https://tnstateparks.com/parks/cardwell-mountain", "desc": "A protected archaeological landscape in Warren County preserving an Indigenous site and mountain setting. Check the official park page for current access information."},
+            {"name": "Cedars of Lebanon State Park", "lat": 36.091631, "lng": -86.330957, "official": "https://tnstateparks.com/parks/cedars-of-lebanon", "desc": "Explore the unique cedar glades of Cedars of Lebanon State Park. Plan your visit for hiking, camping, and horseback riding at this Tennessee State Park."},
+            {"name": "Cherokee Trail of Tears State Park", "lat": 35.405844, "lng": -85.00685, "official": "https://tnstateparks.com/parks/cherokee-trail-of-tears", "desc": "A newly protected Tennessee destination with developing visitor access. Check the official park page for current openings, facilities, and trail information."},
+            {"name": "Chickasaw State Park", "lat": 35.392688, "lng": -88.772266, "official": "https://tnstateparks.com/parks/chickasaw", "desc": "Enjoy family fun at Chickasaw State Park. Plan your visit for camping, boating, and horseback riding at this beautiful Tennessee State Park."},
+            {"name": "Clinch River Valley State Park", "lat": 36.569929, "lng": -83.042274, "official": "https://tnstateparks.com/parks/clinch-river-valley", "desc": "Clinch River Valley State Park in Kyle's Ford, TN (Hancock County) showcases a love for the outdoors primarily focusing on conserving the exceptionally biodiverse Clinch River"},
+            {"name": "Cordell Hull Birthplace State Park", "lat": 36.582314, "lng": -85.183953, "official": "https://tnstateparks.com/parks/cordell-hull-birthplace", "desc": "Explore the life of a statesman at Cordell Hull Birthplace State Park. Plan your visit to this historic Tennessee State Park and Bunkum Cave."},
+            {"name": "Cove Lake State Park", "lat": 36.309166, "lng": -84.211156, "official": "https://tnstateparks.com/parks/cove-lake", "desc": "Enjoy family fun at Cove Lake State Park. Plan your visit for camping, hiking, and boating at the base of the Cumberland Mountains in this Tennessee State Park."},
+            {"name": "Cumberland Mountain State Park", "lat": 35.900512, "lng": -84.997215, "official": "https://tnstateparks.com/parks/cumberland-mountain", "desc": "Discover the beauty of Cumberland Mountain State Park. Plan your visit for golf, camping, and hiking on the Cumberland Plateau at this Tennessee State Park."},
+            {"name": "Cummins Falls State Park", "lat": 36.262023, "lng": -85.584588, "official": "https://tnstateparks.com/parks/cummins-falls", "desc": "Discover the stunning waterfalls of Cummins Falls State Park. Plan your visit to see the cascades and enjoy the trails at this Tennessee State Park."},
+            {"name": "David Crockett Birthplace State Park", "lat": 36.210692, "lng": -82.658727, "official": "https://tnstateparks.com/parks/david-crockett-birthplace", "desc": "Nestled on 105 acres in Limestone, Tennessee, David Crockett Birthplace State Park marks the humble beginnings of the legendary frontiersman. While currently closed due to extensive flood damage, the park offers a glimpse into 18th-century frontier life."},
+            {"name": "David Crockett State Park", "lat": 35.24538, "lng": -87.35141, "official": "https://tnstateparks.com/parks/david-crockett", "desc": "Explore the history of David Crockett State Park. Plan your visit for camping, boating, and dining at this beautiful Tennessee State Park."},
+            {"name": "Devil's Backbone State Park", "lat": 35.612, "lng": -87.4138, "official": "https://tnstateparks.com/parks/devils-backbone", "desc": "A newly protected Tennessee destination with developing visitor access. Check the official park page for current openings, facilities, and trail information."},
+            {"name": "Dunbar Cave State Park", "lat": 36.55448, "lng": -87.30443, "official": "https://tnstateparks.com/parks/dunbar-cave", "desc": "Explore the mysteries of Dunbar Cave State Park. Plan your visit to tour the cave and hike the trails at this historic Tennessee State Park."},
+            {"name": "Edgar Evins State Park", "lat": 36.087832, "lng": -85.813015, "official": "https://tnstateparks.com/parks/edgar-evins", "desc": "Enjoy stunning lake views at Edgar Evins State Park. Plan your visit for boating, camping, and hiking at this beautiful Tennessee State Park."},
+            {"name": "Fall Creek Falls State Park", "lat": 35.65642, "lng": -85.35724, "official": "https://tnstateparks.com/parks/fall-creek-falls", "desc": "Visit Fall Creek Falls, one of Tennessee's most spectacular state parks. Discover towering waterfalls, hiking trails, and the beautiful lodge."},
+            {"name": "Fiery Gizzard State Park", "lat": 35.2551, "lng": -85.79053, "official": "https://tnstateparks.com/parks/fiery-gizzard", "desc": "Explore the stunning gorges and waterfalls of Fiery Gizzard State Park. Plan your visit for hiking and camping at this Tennessee State Park."},
+            {"name": "Fort Loudoun State Historic Park", "lat": 35.581634, "lng": -84.195509, "official": "https://tnstateparks.com/parks/fort-loudoun", "desc": "Step back into the 18th century at Fort Loudoun State Historic Park. Plan your visit to this reconstructed fort, a unique Tennessee State Park."},
+            {"name": "Fort Pillow State Historic Park", "lat": 35.640509, "lng": -89.83589, "official": "https://tnstateparks.com/parks/fort-pillow", "desc": "Explore Civil War history and the Mississippi River at Fort Pillow State Historic Park. Plan your visit to this significant Tennessee State Park."},
+            {"name": "Fort Southwest Point State Historic Park", "lat": 35.860984407985, "lng": -84.525984410647, "official": "https://tnstateparks.com/parks/fort-southwest-point", "desc": "Fort Southwest Point is home to some of the more unique stories in US and Tennessee history. Visitors can enjoy time in the wide open fields while learning more about the Southwestern territory in the Revolutionary period."},
+            {"name": "Frozen Head State Park", "lat": 36.125124, "lng": -84.504535, "official": "https://tnstateparks.com/parks/frozen-head", "desc": "Explore the wild beauty of Frozen Head State Park. Plan your visit for challenging hikes and backcountry camping at this rugged Tennessee State Park."},
+            {"name": "Harpeth River State Park", "lat": 36.15144, "lng": -87.11709, "official": "https://tnstateparks.com/parks/harpeth-river", "desc": "Explore the scenic Harpeth River State Park near Nashville. Plan your visit for kayaking, hiking to stunning overlooks, and discovering history."},
+            {"name": "Harrison Bay State Park", "lat": 35.168294, "lng": -85.121584, "official": "https://tnstateparks.com/parks/harrison-bay", "desc": "Enjoy lake life at Harrison Bay State Park on Chickamauga Lake. Plan your visit for camping, boating, and golfing at this Tennessee State Park."},
+            {"name": "Head of the Crow State Park", "lat": 35.19463, "lng": -85.91691, "official": "https://tnstateparks.com/parks/head-of-the-crow", "desc": "Head of the Crow State Park, located in Franklin County, spans 4,258 acres. The park contains the headwaters of Crow Creek and offers a karst landscape sprawling with hardwood forests, caves, sinkholes, and rare wildlife."},
+            {"name": "Henry Horton State Park", "lat": 35.58997, "lng": -86.694295, "official": "https://tnstateparks.com/parks/henry-horton", "desc": "Discover Henry Horton State Park on the Duck River. Plan your visit for golfing, camping, and dining at this beautiful Tennessee State Park."},
+            {"name": "Hiwassee River State Park", "lat": 35.237847688268, "lng": -84.550668509798, "official": "https://tnstateparks.com/parks/hiwassee-river", "desc": "Enjoy family fun at Hiwassee River State Park. Plan your visit for camping, paddling, and fishing at this beautiful Tennessee State Park."},
+            {"name": "Indian Mountain State Park", "lat": 36.5845, "lng": -84.1417, "official": "https://tnstateparks.com/parks/indian-mountain", "desc": "Discover the unique beauty of Indian Mountain State Park. Plan your visit for camping and fishing at this reclaimed Tennessee State Park."},
+            {"name": "Johnsonville State Historic Park", "lat": 36.0317, "lng": -87.948504, "official": "https://tnstateparks.com/parks/johnsonville", "desc": "Explore Civil War history at Johnsonville State Historic Park. Plan your visit to tour the museum and grounds of this Tennessee State Park."},
+            {"name": "Justin P. Wilson Cumberland Trail", "lat": 35.79277, "lng": -85.00794, "official": "https://tnstateparks.com/parks/cumberland-trail", "desc": "Explore Tennessee's first linear state park spanning 300+ miles. Find trailheads, sections, and highlights of this scenic footpath through the Cumberland Mountains."},
+            {"name": "Lamar Alexander Rocky Fork", "lat": 36.04762, "lng": -82.556465, "official": "https://tnstateparks.com/parks/rocky-fork", "desc": "Explore the wild beauty of Lamar Alexander Rocky Fork State Park. Plan your visit for hiking and fishing in this rugged Tennessee State Park."},
+            {"name": "Long Hunter State Park", "lat": 36.09247, "lng": -86.55537, "official": "https://tnstateparks.com/parks/long-hunter", "desc": "Explore Long Hunter State Park hiking, water activities, and wildlife viewing just minutes from Nashville. Perfect for day trips."},
+            {"name": "Meeman-Shelby Forest State Park", "lat": 35.343865, "lng": -90.032736, "official": "https://tnstateparks.com/parks/meeman-shelby", "desc": "Plan your adventure at Meeman-Shelby Forest, a Tennessee State Park. Discover hiking, boating, camping, and more just minutes from Memphis."},
+            {"name": "Middle Fork Bottoms", "lat": 35.756311, "lng": -88.851901, "official": "https://tnstateparks.com/parks/middle-fork-bottoms", "desc": "Discover the natural beauty of Middle Fork Bottoms, a Tennessee State Park. Plan your visit to explore hiking, fishing, and wildlife viewing."},
+            {"name": "Montgomery Bell State Park", "lat": 36.10095, "lng": -87.28507, "official": "https://tnstateparks.com/parks/montgomery-bell", "desc": "Escape to Montgomery Bell, a historic Tennessee State Park. Enjoy golfing, camping, and boating just a short drive from Nashville."},
+            {"name": "Mousetail Landing State Park", "lat": 35.655704, "lng": -88.006821, "official": "https://tnstateparks.com/parks/mousetail-landing", "desc": "Explore the rugged beauty of Mousetail Landing on the Tennessee River. Plan your visit to this Tennessee State Park for camping, hiking, and more."},
+            {"name": "Natchez Trace State Park", "lat": 35.796809, "lng": -88.264674, "official": "https://tnstateparks.com/parks/natchez-trace", "desc": "Discover the vast Natchez Trace State Park. Plan your visit for camping, fishing, hiking, and horseback riding at this massive Tennessee State Park."},
+            {"name": "Nathan Bedford Forrest State Park", "lat": 36.08288, "lng": -87.98526, "official": "https://tnstateparks.com/parks/nathan-bedford-forrest", "desc": "Explore history and nature at Nathan Bedford Forrest State Park. Plan your visit to this Tennessee State Park for boating, fishing, and hiking."},
+            {"name": "Norris Dam State Park", "lat": 36.239551, "lng": -84.109467, "official": "https://tnstateparks.com/parks/norris-dam", "desc": "Discover the historic Norris Dam State Park. Plan your visit for camping, hiking, and boating on the shores of Norris Lake at this Tennessee State Park."},
+            {"name": "North Chickamauga Creek Gorge", "lat": 35.235029, "lng": -85.232701, "official": "https://tnstateparks.com/parks/north-chickamauga", "desc": "Explore the rugged beauty of North Chickamauga Creek Gorge. Plan your visit to this Tennessee State Park for hiking, climbing, and paddling."},
+            {"name": "Ocoee River State Park", "lat": 35.1, "lng": -84.55, "official": "https://tnstateparks.com/parks/ocoee-river", "desc": "Ocoee River State Park is home to the internationally recognized whitewater sites along the \"Mighty Ocoee\" River. The Ocoee is the only Olympic river in the United States and the world's only natural river to have hosted Olympic whitewater competition, serving as the venue for the canoe and kayak slalom events during the 1996 Summer Olympics."},
+            {"name": "Old Stone Fort State Archaeological Park", "lat": 35.486252, "lng": -86.102693, "official": "https://tnstateparks.com/parks/old-stone-fort", "desc": "Step into the past at Old Stone Fort State Archaeological Park. Explore the ancient mounds and beautiful waterfalls at this unique Tennessee State Park."},
+            {"name": "Panther Creek State Park", "lat": 36.20691, "lng": -83.40623, "official": "https://tnstateparks.com/parks/panther-creek", "desc": "Discover stunning views of Cherokee Lake at Panther Creek State Park. Plan your visit to this Tennessee State Park for hiking, biking, and camping."},
+            {"name": "Paris Landing State Park", "lat": 36.43934, "lng": -88.08343, "official": "https://tnstateparks.com/parks/paris-landing", "desc": "Experience the new Lodge at Paris Landing State Park. Plan your visit for golf, boating, and relaxation on Kentucky Lake at this Tennessee State Park."},
+            {"name": "Pickett CCC Memorial State Park", "lat": 36.551266, "lng": -84.796691, "official": "https://tnstateparks.com/parks/pickett", "desc": "Discover the rustic charm of Pickett CCC Memorial State Park. Plan your visit to this Tennessee State Park for hiking, camping, and stargazing."},
+            {"name": "Pickwick Landing State Park", "lat": 35.051941, "lng": -88.239821, "official": "https://tnstateparks.com/parks/pickwick-landing", "desc": "Experience the ultimate lake getaway at Pickwick Landing. Plan your visit to this Tennessee State Park for boating, golf, and lodging."},
+            {"name": "Pinson Mounds State Archaeological Park", "lat": 35.497873, "lng": -88.682251, "official": "https://tnstateparks.com/parks/pinson-mounds", "desc": "Journey through history at Pinson Mounds State Archaeological Park. Explore the ancient mounds and museum at this unique Tennessee State Park."},
+            {"name": "Port Royal State Historic Park", "lat": 36.553866, "lng": -87.142787, "official": "https://tnstateparks.com/parks/port-royal", "desc": "Discover the rich history of Port Royal State Park. Plan your visit to this Tennessee State Park to explore historic sites and scenic trails."},
+            {"name": "Radnor Lake State Natural Area", "lat": 36.063046, "lng": -86.809711, "official": "https://tnstateparks.com/parks/radnor-lake", "desc": "Escape to the serene Radnor Lake State Natural Area. Plan your visit for wildlife viewing and peaceful hiking at this beautiful Tennessee State Park."},
+            {"name": "Red Clay State Historic Park", "lat": 34.99408, "lng": -84.94537, "official": "https://tnstateparks.com/parks/red-clay", "desc": "Discover the history of the Cherokee Nation at Red Clay State Historic Park. Plan your visit to this important Tennessee State Park."},
+            {"name": "Reelfoot Lake State Park", "lat": 36.363126, "lng": -89.432794, "official": "https://tnstateparks.com/parks/reelfoot-lake", "desc": "Explore the unique flooded forest of Reelfoot Lake State Park. Plan your visit for incredible birding and fishing at this Tennessee State Park."},
+            {"name": "Roan Mountain State Park", "lat": 36.16413, "lng": -82.09529, "official": "https://tnstateparks.com/parks/roan-mountain", "desc": "Experience the beauty of Roan Mountain State Park. Plan your visit for hiking through rhododendron gardens and camping at this Tennessee State Park."},
+            {"name": "Rock Island State Park", "lat": 35.80921, "lng": -85.641965, "official": "https://tnstateparks.com/parks/rock-island", "desc": "Discover the stunning waterfalls and gorge of Rock Island State Park. Plan your visit for hiking, swimming, and camping at this Tennessee State Park."},
+            {"name": "Savage Gulf State Natural Area", "lat": 35.446544, "lng": -85.656038, "official": "https://tnstateparks.com/parks/savage-gulf", "desc": "Explore the stunning gorges and waterfalls of Savage Gulf State Park. Plan your visit for hiking and backcountry camping at this Tennessee State Park."},
+            {"name": "Scotts Gulf Wilderness", "lat": 35.87328, "lng": -85.34525, "official": "https://tnstateparks.com/parks/scotts-gulf", "desc": "Explore the wild beauty of Scott's Gulf Wilderness State Park. Plan your visit for hiking and hunting in this rugged Tennessee State Park."},
+            {"name": "Seven Islands State Birding Park", "lat": 35.953022, "lng": -83.687758, "official": "https://tnstateparks.com/parks/seven-islands", "desc": "Discover a birdwatcher's paradise at Seven Islands State Birding Park. Plan your visit to this premier Tennessee State Park for birding and hiking."},
+            {"name": "Sgt. Alvin C. York State Historic Park", "lat": 36.54154, "lng": -84.95959, "official": "https://tnstateparks.com/parks/sgt-alvin-c-york", "desc": "Honor a hero at Sgt. Alvin C. York State Historic Park. Plan your visit to tour his home and learn his story at this Tennessee State Park."},
+            {"name": "Standing Stone State Park", "lat": 36.47133, "lng": -85.41511, "official": "https://tnstateparks.com/parks/standing-stone", "desc": "Discover the rustic charm of Standing Stone State Park. Plan your visit to this Tennessee State Park for hiking, camping, and boating."},
+            {"name": "Sycamore Shoals State Historic Park", "lat": 36.343921, "lng": -82.252801, "official": "https://tnstateparks.com/parks/sycamore-shoals", "desc": "Step into history at Sycamore Shoals State Historic Park. Plan your visit to explore the fort and learn about its past at this Tennessee State Park."},
+            {"name": "T.O. Fuller State Park", "lat": 35.059764, "lng": -90.114113, "official": "https://tnstateparks.com/parks/t-o-fuller", "desc": "Discover the history and nature of T.O. Fuller State Park. Plan your visit to this Tennessee State Park for camping, hiking, and swimming."},
+            {"name": "Tims Ford State Park", "lat": 35.220225, "lng": -86.255613, "official": "https://tnstateparks.com/parks/tims-ford", "desc": "Enjoy lake life at Tims Ford State Park. Plan your visit for boating, fishing, golfing, and camping at this beautiful Tennessee State Park."},
+            {"name": "Warriors' Path State Park", "lat": 36.491402, "lng": -82.482769, "official": "https://tnstateparks.com/parks/warriors-path", "desc": "Discover endless activities at Warriors' Path State Park. Plan your visit for golf, boating, and hiking at this popular Tennessee State Park."}
+        ];
+
+        Object.keys(MASTER_PARK_DATABASE).forEach((name) => {
+            const park = MASTER_PARK_DATABASE[name];
+            if (park.type === "State" && park.state === "TN") delete MASTER_PARK_DATABASE[name];
+        });
+
+        TENNESSEE_STATE_PARKS.forEach((park) => {
+            MASTER_PARK_DATABASE[park.name] = {
+                ...park,
+                state: "TN",
+                type: "State",
+                history: `<p>${park.desc}</p>`,
+                hikes: [],
+                catalogSource: "Tennessee State Parks"
+            };
+        });
+
         async function init() {
             const dateElem = document.getElementById('log-date');
             if (dateElem) dateElem.valueAsDate = new Date();
@@ -644,6 +784,18 @@
         }
 
         async function fetchParks() {
+            syncAllParksData();
+            
+            const states = [...new Set(allParksData.flatMap((park) => String(park.state || "").split(",").map((state) => state.trim()).filter(Boolean)))].sort();
+            const stateSelect = document.getElementById('filter-state');
+            stateSelect.innerHTML = '<option value="ALL">All States</option>';
+            states.forEach(st => stateSelect.innerHTML += `<option value="${st}">${STATE_NAMES[st] || st}</option>`);
+
+            applyFilters();
+            initMap();
+        }
+
+        function syncAllParksData() {
             allParksData = Object.keys(MASTER_PARK_DATABASE).map((name, idx) => {
                 const item = MASTER_PARK_DATABASE[name];
                 return {
@@ -657,14 +809,6 @@
                     description: item.desc
                 };
             });
-            
-            const states = [...new Set(allParksData.flatMap((park) => String(park.state || "").split(",").map((state) => state.trim()).filter(Boolean)))].sort();
-            const stateSelect = document.getElementById('filter-state');
-            stateSelect.innerHTML = '<option value="ALL">All States</option>';
-            states.forEach(st => stateSelect.innerHTML += `<option value="${st}">${st}</option>`);
-
-            applyFilters();
-            initMap();
         }
 
         function initMap() {
@@ -763,6 +907,66 @@
             renderHomeMapMarkers(filtered);
         }
 
+        async function handleStateFilterChange() {
+            const stateCode = document.getElementById("filter-state").value;
+            if (stateCode !== "ALL" && !loadedStateParkCodes.has(stateCode)) {
+                await ensureStateParkDirectory(stateCode);
+            }
+            applyFilters();
+        }
+
+        async function ensureStateParkDirectory(stateCode) {
+            if (loadedStateParkCodes.has(stateCode)) return;
+            if (stateParkLoadPromises.has(stateCode)) return stateParkLoadPromises.get(stateCode);
+
+            const status = document.getElementById("state-park-load-status");
+            const stateName = STATE_NAMES[stateCode] || stateCode;
+            status.textContent = `Loading the complete mapped ${stateName} state-park directory…`;
+
+            const promise = (async () => {
+                try {
+                    const query = `[out:json][timeout:45];
+                        area["ISO3166-2"="US-${stateCode}"]["admin_level"="4"]->.stateArea;
+                        (
+                            nwr(area.stateArea)["name"~"State (Park|Historic Park|Historical Park|Recreation Area|Natural Area|Wilderness Park|Archaeological Park|Forest|Beach|Reserve)$",i];
+                            nwr(area.stateArea)["name"]["protection_title"~"State Park",i];
+                            nwr(area.stateArea)["name"]["designation"~"state[_ ]park",i];
+                        );
+                        out center tags;`;
+                    const payload = await queryOverpass(query);
+                    const found = [];
+                    const seen = new Set();
+                    (payload.elements || []).forEach((element) => {
+                        const tags = element.tags || {};
+                        const name = String(tags.name || "").trim();
+                        const center = element.center ? [element.center.lat, element.center.lon] : [element.lat, element.lon];
+                        if (!name || seen.has(name.toLowerCase()) || !center.every(Number.isFinite)) return;
+                        seen.add(name.toLowerCase());
+                        const official = normalizeExternalUrl(tags.website || tags["contact:website"] || tags.url || "");
+                        const description = tags.description || `${name} is a ${stateName} state-managed destination. Use the park and trail maps for orientation, then confirm hours, fees, camping, permits, and current alerts with the managing agency.`;
+                        MASTER_PARK_DATABASE[name] = {
+                            lat: center[0], lng: center[1], state: stateCode, type: "State", desc: description,
+                            history: `<p>${escapeHTML(description)}</p>`, official, hikes: [],
+                            catalogSource: "Mapped state-park directory", sourceMeta: tags
+                        };
+                        found.push(name);
+                    });
+                    loadedStateParkCodes.add(stateCode);
+                    syncAllParksData();
+                    status.textContent = found.length
+                        ? `${found.length} mapped ${stateName} state-park destinations loaded. Select a park to explore it.`
+                        : `No additional mapped ${stateName} state parks were returned. The existing verified destination remains available.`;
+                } catch (error) {
+                    console.error("State park directory failed:", error);
+                    status.textContent = `${stateName}'s live state-park directory is temporarily unavailable. Existing verified parks remain available.`;
+                } finally {
+                    stateParkLoadPromises.delete(stateCode);
+                }
+            })();
+            stateParkLoadPromises.set(stateCode, promise);
+            return promise;
+        }
+
         async function loadSelectedPark() {
             const parkId = document.getElementById('filter-park').value;
             if (!parkId) return;
@@ -788,6 +992,8 @@
             document.getElementById('park-desc').innerText = master.desc;
 
             document.getElementById('park-history-container').innerHTML = master.history;
+            document.getElementById("park-planning-summary").textContent = `${master.desc} Review the mapped trails and campground locations, then verify seasonal access, reservations, permits, and alerts before traveling.`;
+            renderParkSourceLinks(master);
 
             const officialLink = document.getElementById("official-park-link");
             officialLink.href = getOfficialMapUrl(master);
@@ -799,7 +1005,7 @@
 
             const amenContainer = document.getElementById('park-amenities');
             amenContainer.innerHTML = '';
-            ["Visitor Centers", "Restrooms", "Campgrounds", "Hiking Trails", "Scenic Overlooks", "RV Dump Stations"].forEach(a => {
+            ["Official Planning Source", "Live Topographic Map", "Mapped Trail Directory", "Current Conditions Check"].forEach(a => {
                 amenContainer.innerHTML += `<span class="px-3 py-1 bg-slate-100 border border-slate-200 text-xs text-emerald-800 font-semibold rounded-lg"><i class="fa-solid fa-check mr-1.5 text-emerald-600"></i>${a}</span>`;
             });
 
@@ -814,6 +1020,7 @@
             filterTrailsByDifficulty();
 
             loadLiveParkMapData(parkName, master);
+            enrichParkDestination(parkName, master);
 
             fetchYouTubeVideoForPark(parkName);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -890,6 +1097,7 @@
                 area["name"~"${safeName}",i]["boundary"~"protected_area|national_park"]->.parkArea;
                 (
                     relation(around:60000,${lat},${lng})["boundary"~"protected_area|national_park"]["name"~"${safeName}",i];
+                    relation(area.parkArea)["route"~"^(hiking|foot)$"]["name"];
                     way(area.parkArea)["highway"~"^(path|footway|track)$"]["name"];
                     nwr(area.parkArea)["tourism"~"^(camp_site|caravan_site)$"];
                 );
@@ -900,6 +1108,7 @@
 
             if (parsed.trails.length === 0 && parsed.campsites.length === 0) {
                 const fallbackQuery = `[out:json][timeout:35];(
+                    relation(around:25000,${lat},${lng})["route"~"^(hiking|foot)$"]["name"];
                     way(around:25000,${lat},${lng})["highway"~"^(path|footway|track)$"]["name"];
                     nwr(around:25000,${lat},${lng})["tourism"~"^(camp_site|caravan_site)$"];
                     relation(around:60000,${lat},${lng})["boundary"~"protected_area|national_park"]["name"~"${safeName}",i];
@@ -962,26 +1171,37 @@
                     return;
                 }
 
-                if (tags.highway && tags.name && geometry.length > 1) {
+                const isHikingRoute = /^(hiking|foot)$/.test(tags.route || "");
+                if ((isHikingRoute || tags.highway) && isDestinationTrailName(tags.name, tags) && geometry.length > 1) {
                     const key = tags.name.toLowerCase();
                     if (!seenTrails.has(key)) {
                         seenTrails.add(key);
                         const miles = calculateRouteMiles(geometry);
                         trails.push({
                             name: tags.name,
-                            dist: miles > 0 ? `${miles.toFixed(1)} mi mapped` : "Mapped route",
+                            dist: formatTrailDistance(tags.distance, miles),
                             diff: difficultyFromTags(tags),
-                            elev: "Loads with mapped route",
-                            area: tags.operator || tags.network || "Park trail",
-                            desc: tags.description || "Mapped trail alignment. Confirm closures, conditions, and permitted uses with the managing park.",
+                            elev: tags.ascent ? `${tags.ascent} ascent` : "Loads with mapped route",
+                            area: tags.operator || tags.network || (isHikingRoute ? "Named hiking route" : "Park trail"),
+                            desc: buildTrailDescription(tags, isHikingRoute),
                             route: geometry,
-                            osmId: `${element.type}/${element.id}`
+                            osmId: `${element.type}/${element.id}`,
+                            sourceType: isHikingRoute ? "Named hiking route" : "Named mapped trail",
+                            surface: tags.surface || "Not listed",
+                            trailVisibility: tags.trail_visibility || "Not listed",
+                            ascent: tags.ascent || "",
+                            descent: tags.descent || "",
+                            website: normalizeExternalUrl(tags.website || tags.url || "")
                         });
                     }
                 }
             });
 
-            return { boundaries, trails: trails.sort((a, b) => a.name.localeCompare(b.name)), campsites: campsites.sort((a, b) => a.name.localeCompare(b.name)) };
+            trails.sort((a, b) => {
+                const routePriority = Number(b.sourceType === "Named hiking route") - Number(a.sourceType === "Named hiking route");
+                return routePriority || a.name.localeCompare(b.name);
+            });
+            return { boundaries, trails, campsites: campsites.sort((a, b) => a.name.localeCompare(b.name)) };
         }
 
         function extractElementGeometry(element) {
@@ -1075,7 +1295,7 @@
                                     <p class="text-sm font-bold text-slate-900">${escapeHTML(h.name)}</p>
                                     <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-md">${escapeHTML(h.diff || 'General')}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-600"></i> Distance: ${escapeHTML(h.dist || 'N/A')} • ${escapeHTML(h.area || 'Park Trail')}</p>
+                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-600"></i> Distance: ${escapeHTML(h.dist || 'N/A')} • ${escapeHTML(h.sourceType || h.area || 'Recommended trail')}</p>
                             </div>
                             <button onclick="openTrailModal(${sourceIndex})" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 whitespace-nowrap">
                                 <span>Inspect Trail Guide</span>
@@ -1101,9 +1321,11 @@
             document.getElementById('modal-trail-elev').innerText = hike.elev || '350 ft';
             document.getElementById('modal-trail-area').innerText = hike.area || 'Park Grounds';
             document.getElementById('modal-trail-desc').innerText = hike.desc || 'Follow official park trail signs carefully and stay on designated paths.';
+            document.getElementById('modal-trail-source').innerText = hike.sourceType || (hike.source === "recommended" ? "Park Blueprint recommendation" : "Mapped trail data");
+            document.getElementById('modal-trail-surface').innerText = hike.surface || 'Not listed—check the official park guide';
             
             const npsLink = document.getElementById('modal-trail-nps-link');
-            npsLink.href = hike.nps || `https://www.nps.gov/search/?query=${encodeURIComponent(hike.name)}`;
+            npsLink.href = normalizeExternalUrl(hike.website || hike.nps || getOfficialParkUrl(MASTER_PARK_DATABASE[currentSelectedPark.name])) || getOfficialParkUrl(MASTER_PARK_DATABASE[currentSelectedPark.name]);
 
             document.getElementById('trail-modal').classList.remove('hidden');
 
@@ -1118,10 +1340,11 @@
                     modalTrailMap.setView([master.lat, master.lng], 13);
                 }
                 trailFeatureLayer.clearLayers();
+                trailScrubberMarker = null;
                 if (Array.isArray(hike.route) && hike.route.length > 1) {
                     const routeLine = L.polyline(hike.route, { color: "#059669", weight: 5, opacity: 0.9 }).addTo(trailFeatureLayer);
-                    L.circleMarker(hike.route[0], { radius: 6, color: "#fff", weight: 2, fillColor: "#047857", fillOpacity: 1 })
-                        .bindPopup("Trail start")
+                    trailScrubberMarker = L.circleMarker(hike.route[0], { radius: 8, color: "#fff", weight: 3, fillColor: "#f59e0b", fillOpacity: 1 })
+                        .bindTooltip("Elevation locator", { permanent: false, direction: "top" })
                         .addTo(trailFeatureLayer);
                     modalTrailMap.fitBounds(routeLine.getBounds(), { padding: [24, 24], maxZoom: 16 });
                     loadElevationProfile(hike.route);
@@ -1308,13 +1531,57 @@
         function getOfficialParkUrl(master) {
             if (master.official) return master.official;
             const candidate = (master.hikes || []).map((hike) => hike.nps).find(Boolean);
-            return candidate || "https://www.nps.gov/findapark/index.htm";
+            if (candidate) return candidate;
+            return master.type === "State" ? "https://www.usa.gov/state-parks" : "https://www.nps.gov/findapark/index.htm";
         }
 
         function getOfficialMapUrl(master) {
             const official = getOfficialParkUrl(master);
             const npsMatch = official.match(/nps\.gov\/([a-z]{4})(?:\/|$)/i);
             return npsMatch ? `https://www.nps.gov/${npsMatch[1].toLowerCase()}/planyourvisit/maps.htm` : official;
+        }
+
+        function normalizeExternalUrl(value) {
+            try {
+                const url = new URL(String(value || ""), window.location.href);
+                return /^https?:$/.test(url.protocol) ? url.href : "";
+            } catch (_) {
+                return "";
+            }
+        }
+
+        function renderParkSourceLinks(master, wikipediaUrl = "") {
+            const container = document.getElementById("park-source-links");
+            const officialUrl = normalizeExternalUrl(getOfficialParkUrl(master));
+            const links = [];
+            if (officialUrl) links.push({ label: master.catalogSource || (master.type === "National" ? "National Park Service" : "Official park source"), url: officialUrl });
+            if (wikipediaUrl) links.push({ label: "Destination background", url: wikipediaUrl });
+            links.push({ label: "Live map data", url: "https://www.openstreetmap.org" });
+            container.replaceChildren(...links.map(({ label, url }) => {
+                const link = document.createElement("a");
+                link.href = url;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.className = "px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-bold hover:bg-emerald-100";
+                link.textContent = label;
+                return link;
+            }));
+        }
+
+        async function enrichParkDestination(parkName, master) {
+            const requestedPark = currentSelectedPark?.name;
+            const wikipediaTitle = String(master.sourceMeta?.wikipedia || parkName).replace(/^en:/, "");
+            try {
+                const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikipediaTitle)}`);
+                if (!response.ok) return;
+                const article = await response.json();
+                if (currentSelectedPark?.name !== requestedPark || !article.extract) return;
+                const summary = document.getElementById("park-planning-summary");
+                summary.textContent = `${article.extract} Use the live maps below for orientation, and confirm current alerts, fees, permits, reservations, and closures with the managing park before traveling.`;
+                renderParkSourceLinks(master, normalizeExternalUrl(article.content_urls?.desktop?.page || ""));
+            } catch (error) {
+                console.info("Additional destination background unavailable:", error);
+            }
         }
 
         function escapeHTML(value) {
@@ -1335,7 +1602,35 @@
             const scale = String(tags.sac_scale || "").toLowerCase();
             if (/demanding|alpine|difficult/.test(scale)) return "Hard";
             if (/mountain_hiking|incline/.test(scale) || tags.incline) return "Moderate";
-            return "Easy";
+            if (tags.wheelchair === "yes" || /^(paved|asphalt|concrete|boardwalk)$/.test(tags.surface || "")) return "Easy";
+            return "Unrated";
+        }
+
+        function isDestinationTrailName(name, tags = {}) {
+            const value = String(name || "").trim();
+            if (value.length < 4 || !/[A-Za-z]{3}/.test(value)) return false;
+            if (/^\d+(?:[.\-]\d+)?[A-Z]*$/i.test(value)) return false;
+            if (/^(?:FS|FR|SR|CR|NFS|Route)?\s*\d+(?:[.\-]\d+)?[A-Z]*$/i.test(value)) return false;
+            if (/\b(?:road|rd\.?|highway|hwy\.?|drive|dr\.?|lane|ln\.?)$/i.test(value)) return false;
+            if (tags.highway === "track" && !/\b(trail|path|loop|way|walk|ridge|falls|creek|canyon|mountain|summit|overlook)\b/i.test(value)) return false;
+            return true;
+        }
+
+        function formatTrailDistance(taggedDistance, calculatedMiles) {
+            const tagged = String(taggedDistance || "").trim();
+            if (tagged) return tagged;
+            return calculatedMiles >= 0.05 ? `${calculatedMiles.toFixed(1)} mi mapped` : "Short mapped route";
+        }
+
+        function buildTrailDescription(tags, isHikingRoute) {
+            const details = [];
+            if (tags.description) details.push(tags.description);
+            else details.push(isHikingRoute ? "A named hiking route mapped through the park." : "A named trail segment mapped within the park.");
+            if (tags.surface) details.push(`Surface: ${tags.surface.replaceAll("_", " ")}.`);
+            if (tags.trail_visibility) details.push(`Trail visibility: ${tags.trail_visibility.replaceAll("_", " ")}.`);
+            if (tags.ascent || tags.descent) details.push(`Published route data: ${tags.ascent ? `${tags.ascent} ascent` : "ascent not listed"}${tags.descent ? `, ${tags.descent} descent` : ""}.`);
+            details.push("Confirm current closures, conditions, and permitted uses with the managing park.");
+            return details.join(" ");
         }
 
         function calculateRouteMiles(route) {
@@ -1352,22 +1647,47 @@
             return total;
         }
 
-        function sampleRoute(route, count = 12) {
-            if (route.length <= count) return route;
-            return Array.from({ length: count }, (_, index) => route[Math.round(index * (route.length - 1) / (count - 1))]);
+        function sampleRoute(route, count = 20) {
+            const cumulative = [0];
+            for (let index = 1; index < route.length; index += 1) {
+                cumulative.push(cumulative[index - 1] + calculateRouteMiles([route[index - 1], route[index]]));
+            }
+            const total = cumulative.at(-1) || 0;
+            if (!total) return route.slice(0, 1).map((point) => ({ point, distance: 0 }));
+            const samples = [];
+            for (let sampleIndex = 0; sampleIndex < count; sampleIndex += 1) {
+                const target = total * sampleIndex / (count - 1);
+                let routeIndex = cumulative.findIndex((distance) => distance >= target);
+                if (routeIndex < 1) routeIndex = 1;
+                const previousDistance = cumulative[routeIndex - 1];
+                const segmentDistance = Math.max(0.000001, cumulative[routeIndex] - previousDistance);
+                const ratio = Math.min(1, Math.max(0, (target - previousDistance) / segmentDistance));
+                const start = route[routeIndex - 1];
+                const end = route[routeIndex];
+                samples.push({ point: [start[0] + (end[0] - start[0]) * ratio, start[1] + (end[1] - start[1]) * ratio], distance: target });
+            }
+            return samples;
         }
 
         function resetElevationProfile(message) {
             activeElevationRequest += 1;
+            activeElevationProfile = [];
             document.getElementById("trail-elevation-status").textContent = message;
             document.getElementById("trail-elevation-path").setAttribute("d", "M0,90 L500,90 L500,100 L0,100 Z");
+            document.getElementById("trail-elevation-cursor").setAttribute("visibility", "hidden");
+            const scrubber = document.getElementById("elevation-scrubber");
+            scrubber.disabled = true;
+            scrubber.min = 0;
+            scrubber.max = 0;
+            scrubber.value = 0;
+            document.getElementById("elevation-scrubber-readout").textContent = "Select a mapped trail route to activate the elevation locator.";
         }
 
         async function loadElevationProfile(route) {
             const requestId = ++activeElevationRequest;
-            const points = sampleRoute(route, 12);
+            const samples = sampleRoute(route, 20);
             try {
-                const results = await Promise.all(points.map(async ([lat, lng]) => {
+                const elevations = await Promise.all(samples.map(async ({ point: [lat, lng] }) => {
                     const url = `https://epqs.nationalmap.gov/v1/json?x=${encodeURIComponent(lng)}&y=${encodeURIComponent(lat)}&units=Feet&wkid=4326&includeDate=false`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`Elevation service returned ${response.status}`);
@@ -1377,15 +1697,18 @@
                     return value;
                 }));
                 if (requestId !== activeElevationRequest) return;
-                drawElevationProfile(results);
+                activeElevationProfile = samples.map((sample, index) => ({ ...sample, elevation: elevations[index] }));
+                drawElevationProfile(activeElevationProfile);
             } catch (error) {
                 if (requestId !== activeElevationRequest) return;
                 console.error("Elevation profile failed:", error);
                 document.getElementById("trail-elevation-status").textContent = "Measured elevation is temporarily unavailable. The route map remains usable.";
+                document.getElementById("elevation-scrubber-readout").textContent = "The elevation locator will activate when measured elevation data is available.";
             }
         }
 
-        function drawElevationProfile(elevations) {
+        function drawElevationProfile(profile) {
+            const elevations = profile.map((sample) => sample.elevation);
             const minimum = Math.min(...elevations);
             const maximum = Math.max(...elevations);
             const range = Math.max(1, maximum - minimum);
@@ -1399,6 +1722,33 @@
             document.getElementById("trail-elevation-path").setAttribute("d", `M${linePoints.join(" L")} L500,100 L0,100 Z`);
             document.getElementById("trail-elevation-status").textContent = `Measured profile: ${Math.round(minimum).toLocaleString()}–${Math.round(maximum).toLocaleString()} ft elevation • approximately ${Math.round(gain).toLocaleString()} ft sampled gain.`;
             document.getElementById("modal-trail-elev").textContent = `${Math.round(gain).toLocaleString()} ft sampled`;
+            const scrubber = document.getElementById("elevation-scrubber");
+            scrubber.max = profile.length - 1;
+            scrubber.value = 0;
+            scrubber.disabled = false;
+            document.getElementById("trail-elevation-cursor").setAttribute("visibility", "visible");
+            scrubElevation(0);
+        }
+
+        function scrubElevation(rawIndex) {
+            if (!activeElevationProfile.length) return;
+            const index = Math.min(activeElevationProfile.length - 1, Math.max(0, Number(rawIndex) || 0));
+            const sample = activeElevationProfile[index];
+            const start = activeElevationProfile[0];
+            const prior = activeElevationProfile[Math.max(0, index - 1)];
+            const net = sample.elevation - start.elevation;
+            const stepChange = sample.elevation - prior.elevation;
+            const direction = stepChange > 1 ? "climbing" : stepChange < -1 ? "descending" : "nearly level";
+            const netLabel = `${net >= 0 ? "+" : "−"}${Math.abs(Math.round(net)).toLocaleString()} ft from start`;
+            document.getElementById("elevation-scrubber-readout").textContent = `${sample.distance.toFixed(2)} mi • ${Math.round(sample.elevation).toLocaleString()} ft elevation • ${netLabel} • ${direction}`;
+            const x = index * 500 / Math.max(1, activeElevationProfile.length - 1);
+            const cursor = document.getElementById("trail-elevation-cursor");
+            cursor.setAttribute("x1", x.toFixed(1));
+            cursor.setAttribute("x2", x.toFixed(1));
+            if (trailScrubberMarker) {
+                trailScrubberMarker.setLatLng(sample.point);
+                trailScrubberMarker.setTooltipContent(`${sample.distance.toFixed(2)} mi • ${Math.round(sample.elevation).toLocaleString()} ft`);
+            }
         }
 
         document.head.insertAdjacentHTML('beforeend', `<style>.active-tab { background-color: rgb(226 232 240); color: rgb(6 95 70); border-bottom: 2px solid rgb(5 150 105); } .inactive-tab { color: rgb(100 116 139); }</style>`);
