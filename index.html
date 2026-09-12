@@ -12,22 +12,19 @@
     <!-- LEAFLET MAP LIBRARIES -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <style>
         :root { color-scheme: light; }
         html { scroll-behavior: smooth; }
-        .nps-pin {
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/1/1d/US-NationalParkService-Shield-Logo.svg');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
-        }
+        .nps-pin { background: transparent; border: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,.38)); }
+        .nps-arrowhead { display: block; width: 34px; height: 42px; }
         .nps-legend {
             width: 1.45rem;
             height: 1.8rem;
             flex: 0 0 auto;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/1/1d/US-NationalParkService-Shield-Logo.svg') center / contain no-repeat;
             filter: drop-shadow(0 1px 2px rgba(0,0,0,.25));
         }
         .state-legend {
@@ -71,6 +68,9 @@
             backdrop-filter: blur(8px);
         }
         .leaflet-container:fullscreen { width: 100%; height: 100%; }
+        #map:fullscreen, #individual-park-map:fullscreen, #campsite-park-map:fullscreen { border-radius: 0; background: #e2e8f0; }
+        .camp-amenity-known { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
+        .camp-amenity-unknown { background:#f8fafc; border-color:#e2e8f0; color:#64748b; }
         .leaflet-popup-content button:focus-visible,
         button:focus-visible,
         select:focus-visible,
@@ -111,16 +111,20 @@
             
             <!-- INTERACTIVE MAP DISPLAY -->
             <section class="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg relative overflow-hidden">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-4">
                     <h2 class="text-xs font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-2">
                         <i class="fa-solid fa-map-location-dot"></i> Official National & State Parks Master Directory
                     </h2>
-                    <div class="flex items-center gap-4 text-[11px] font-semibold text-slate-600">
-                        <span class="flex items-center gap-2"><span class="nps-legend" aria-hidden="true"></span> 63 National Parks</span>
-                        <span class="flex items-center gap-2"><span class="state-legend" aria-hidden="true"><i class="fa-solid fa-tree text-[10px]"></i></span> State Parks</span>
+                    <div class="flex flex-wrap items-center gap-4 text-[11px] font-semibold text-slate-600">
+                        <span class="flex items-center gap-2"><span id="nps-legend-icon" class="nps-legend" aria-hidden="true"></span><span id="national-map-count">63 National Parks</span></span>
+                        <span class="flex items-center gap-2"><span class="state-legend" aria-hidden="true"><i class="fa-solid fa-tree text-[10px]"></i></span><span id="state-map-count">State Parks</span></span>
+                        <button onclick="toggleFullScreen('map')" class="px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 font-bold hover:bg-emerald-100 flex items-center gap-1.5">
+                            <i class="fa-solid fa-expand"></i> Fullscreen Map
+                        </button>
                     </div>
                 </div>
                 <div id="map" class="w-full h-[520px] rounded-xl bg-slate-100 border border-slate-200 z-10"></div>
+                <p id="national-directory-status" class="text-xs text-slate-500 mt-3">National parks load immediately. Loading the nationwide mapped state-park directory…</p>
             </section>
 
             <!-- FILTER BAR -->
@@ -272,6 +276,21 @@
                     </div>
                 </div>
 
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
+                        <div>
+                            <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-caravan"></i> Campground & RV Planner (<span id="campground-count">0</span>)
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-1">Select a campground to zoom to its grounds map. Published tent, RV, hookup, water, restroom, shower, reservation, fee, capacity, and dump-station details appear when mapped.</p>
+                        </div>
+                        <a id="official-camping-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg whitespace-nowrap">Official Camping Information</a>
+                    </div>
+                    <div id="campground-directory" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <p class="text-xs text-slate-500 col-span-2 p-4 text-center">Select a park to load its mapped campgrounds and RV areas.</p>
+                    </div>
+                </div>
+
                 <!-- COMPLETE TRAIL DIRECTORY LISTING -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -282,7 +301,7 @@
                             <p class="text-xs text-slate-500 mt-0.5">Recommended routes and every named trail returned by the live park map. Open any trail for its route and elevation profile.</p>
                         </div>
                         <select id="trail-diff-filter" onchange="filterTrailsByDifficulty()" class="bg-slate-50 border border-slate-300 text-xs text-slate-800 rounded-xl p-2.5 focus:outline-none">
-                            <option value="ALL">All Difficulties (Easy, Moderate, Hard)</option>
+                            <option value="ALL">All Difficulties (including Unrated)</option>
                             <option value="Easy">Easy Trails Only</option>
                             <option value="Moderate">Moderate Trails Only</option>
                             <option value="Hard">Hard / Strenuous Only</option>
@@ -386,6 +405,8 @@
                     <dl class="grid grid-cols-2 gap-3 mt-4 text-xs">
                         <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><dt class="font-bold text-slate-500">Route source</dt><dd id="modal-trail-source" class="font-semibold text-slate-800 mt-1">--</dd></div>
                         <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><dt class="font-bold text-slate-500">Mapped surface</dt><dd id="modal-trail-surface" class="font-semibold text-slate-800 mt-1">--</dd></div>
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><dt class="font-bold text-slate-500">Trail visibility</dt><dd id="modal-trail-visibility" class="font-semibold text-slate-800 mt-1">--</dd></div>
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><dt class="font-bold text-slate-500">Mapped uses</dt><dd id="modal-trail-uses" class="font-semibold text-slate-800 mt-1">--</dd></div>
                     </dl>
                 </div>
                 <div>
@@ -396,6 +417,7 @@
 
             <div class="pt-2 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                 <button onclick="closeTrailModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-5 py-2.5 rounded-xl text-xs font-bold">Close Trail Guide</button>
+                <a id="modal-trail-map-source" href="#" target="_blank" rel="noopener noreferrer" class="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 px-5 py-2.5 rounded-xl text-xs font-bold text-center hidden">Mapped Route Record</a>
                 <a id="modal-trail-nps-link" href="#" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold text-center">Official Trail & Park Source</a>
             </div>
         </div>
@@ -486,8 +508,11 @@
         let campsiteParkMap = null;
         let modalTrailMap = null;
         let parkMarkerLayer = null;
+        let nationalMarkerLayer = null;
+        let stateMarkerLayer = null;
         let parkFeatureLayer = null;
         let campsiteFeatureLayer = null;
+        let campgroundMarkers = [];
         let trailFeatureLayer = null;
         let currentLoadedHikes = [];
         let currentSelectedPark = null;
@@ -499,6 +524,7 @@
         const parkMapCache = new Map();
         const loadedStateParkCodes = new Set(["TN"]);
         const stateParkLoadPromises = new Map();
+        let nationwideStateDirectoryLoaded = false;
 
         const TOPO_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}";
         const IMAGERY_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -770,6 +796,30 @@
             };
         });
 
+        // Published Fall Creek Falls trail directory. Campground Spur is
+        // intentionally kept in the campground layer rather than presented as a hike.
+        const FALL_CREEK_FALLS_HIKING_URL = "https://tnstateparks.com/parks/fall-creek-falls/hiking";
+        MASTER_PARK_DATABASE["Fall Creek Falls State Park"].hikes = [
+            { name:"Base of Falls Trail", dist:"0.35 mi", diff:"Easy", elev:"Measured when route loads", area:"Fall Creek Falls Overlook", desc:"A short but steep descent from the overlook to the base of Fall Creek Falls. Wet rock and spray can make footing slippery; remember that the return is uphill.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Cable Trail", dist:"0.10 mi", diff:"Easy", elev:"Measured when route loads", area:"Cane Creek Gorge", desc:"A very short access trail into Cane Creek Gorge. Confirm current conditions and whether cables or gorge access are open before descending.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Chinquapin Ridge Mountain Bike Trail", dist:"5.45 mi", diff:"Moderate", elev:"Measured when route loads", area:"Chinquapin Ridge", desc:"A longer ridge loop published for mountain-bike use. Hikers should watch for bicycle traffic and confirm current permitted uses.", uses:"Hiking, Bicycles", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Fall Creek Bike Trail", dist:"0.65 mi", diff:"Easy", elev:"Measured when route loads", area:"Fall Creek Falls", desc:"A short paved shared-use trail. Expect bicycle traffic and follow posted right-of-way guidance.", surface:"Paved", uses:"Hiking, Bicycles", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Gilbert Gaul Trail", dist:"4.15 mi", diff:"Moderate", elev:"Measured when route loads", area:"Gilbert Gaul homestead area", desc:"A woodland loop reaching the historic Gilbert Gaul area and the upper lake country. Carry the park map at junctions.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Lake Bike Trail", dist:"1.30 mi", diff:"Easy", elev:"Measured when route loads", area:"Fall Creek Falls Lake", desc:"A paved shared-use route near the lake. Watch for bicycles and confirm any seasonal maintenance closures.", surface:"Paved", uses:"Hiking, Bicycles", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Link Trail", dist:"4.40 mi", diff:"Moderate", elev:"Measured when route loads", area:"Backcountry trail system", desc:"A connecting route within the park trail network. Plan junctions carefully and carry an offline or paper park map.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Lower Loop Trail", dist:"12.00 mi", diff:"Hard", elev:"Measured when route loads", area:"Backcountry loop", desc:"A long, strenuous backcountry loop. Allow substantial time, carry water and navigation, and verify overnight rules, trail conditions, and closures.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Millikans Overlook Trail", dist:"0.45 mi", diff:"Easy", elev:"Measured when route loads", area:"Millikan's Overlook", desc:"A short overlook route. Stay behind barriers and verify any posted closure at the overlook or connecting trail.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Overlook Trail", dist:"0.65 mi", diff:"Easy", elev:"Measured when route loads", area:"Cane Creek Gorge", desc:"A short scenic route linking gorge viewpoints. Cliff edges and wet surfaces require close supervision of children.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Paw Paw Trail", dist:"2.50 mi", diff:"Moderate", elev:"Measured when route loads", area:"Nature Center and overlooks", desc:"A woodland loop connecting major overlooks and the nature-center side of the gorge. Check junction signs where it meets Woodland and overlook routes.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Piney Creek Mountain Bike Trail", dist:"3.20 mi", diff:"Moderate", elev:"Measured when route loads", area:"Piney Creek", desc:"A shared-use route in the Piney Creek section. Expect bicycle traffic and confirm current direction or use restrictions.", uses:"Hiking, Bicycles", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Piney Falls Path", dist:"0.90 mi", diff:"Easy", elev:"Measured when route loads", area:"Piney Creek Falls", desc:"A paved shared-use approach to the Piney Creek Falls overlook area. There is no maintained hiking trail to the base of Piney Creek Falls.", surface:"Paved", uses:"Hiking, Bicycles", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Prater Place Trail", dist:"3.00 mi", diff:"Moderate", elev:"Measured when route loads", area:"Prater Place", desc:"A moderate route through the park's quieter historic landscape. Carry navigation and confirm creek and trail conditions after rain.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Turkey Pen Ridge Trail", dist:"0.50 mi", diff:"Easy", elev:"Measured when route loads", area:"Turkey Pen Ridge", desc:"A short ridge trail suited to a lighter outing. Verify the trailhead and any shared-use rules on the current park map.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Upper Loop Trail", dist:"13.00 mi", diff:"Hard", elev:"Measured when route loads", area:"Backcountry loop", desc:"A long backcountry loop with remote sections. Plan water, daylight, navigation, weather, and any overnight permit requirements before departure.", uses:"Hiking, Bicycles", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Wheeler Farm Trail", dist:"1.50 mi", diff:"Easy", elev:"Measured when route loads", area:"Wheeler Farm", desc:"An easy loop through the Wheeler Farm section. Check the current trail map for access and parking because this area is separated from the central falls complex.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL },
+            { name:"Woodland Trail", dist:"0.75 mi", diff:"Easy", elev:"Measured when route loads", area:"Nature Center and gorge", desc:"A short woodland connector near the nature center and suspension bridge area, useful for combining gorge overlooks into a loop.", sourceType:"Published park trail directory", nps:FALL_CREEK_FALLS_HIKING_URL }
+        ];
+
         async function init() {
             const dateElem = document.getElementById('log-date');
             if (dateElem) dateElem.valueAsDate = new Date();
@@ -791,8 +841,9 @@
             stateSelect.innerHTML = '<option value="ALL">All States</option>';
             states.forEach(st => stateSelect.innerHTML += `<option value="${st}">${STATE_NAMES[st] || st}</option>`);
 
-            applyFilters();
             initMap();
+            applyFilters();
+            loadNationwideStateParkDirectory();
         }
 
         function syncAllParksData() {
@@ -819,21 +870,34 @@
             const topo = L.tileLayer(TOPO_TILE_URL, { attribution: ESRI_ATTRIBUTION, maxZoom: 19 }).addTo(parkMap);
             const imagery = L.tileLayer(IMAGERY_TILE_URL, { attribution: ESRI_ATTRIBUTION, maxZoom: 19 });
             L.control.layers({ "Topographic": topo, "Satellite": imagery }, null, { position: "topright" }).addTo(parkMap);
+            parkMap.createPane("stateParksPane");
+            parkMap.getPane("stateParksPane").style.zIndex = 610;
+            parkMap.createPane("nationalParksPane");
+            parkMap.getPane("nationalParksPane").style.zIndex = 640;
             parkMarkerLayer = L.layerGroup().addTo(parkMap);
+            stateMarkerLayer = typeof L.markerClusterGroup === "function"
+                ? L.markerClusterGroup({ maxClusterRadius: 38, showCoverageOnHover: false, spiderfyOnMaxZoom: true })
+                : L.layerGroup();
+            nationalMarkerLayer = L.layerGroup();
+            parkMarkerLayer.addLayer(stateMarkerLayer);
+            parkMarkerLayer.addLayer(nationalMarkerLayer);
 
             renderHomeMapMarkers(allParksData);
+            document.getElementById("nps-legend-icon").innerHTML = npsArrowheadSVG("nps-arrowhead");
             setTimeout(() => parkMap.invalidateSize(), 250);
         }
 
         function renderHomeMapMarkers(parks) {
-            if (!parkMap || !parkMarkerLayer) return;
-            parkMarkerLayer.clearLayers();
+            if (!parkMap || !nationalMarkerLayer || !stateMarkerLayer) return;
+            nationalMarkerLayer.clearLayers();
+            stateMarkerLayer.clearLayers();
 
             const npsIcon = L.divIcon({
                 className: 'nps-pin',
-                iconSize: [28, 36],
-                iconAnchor: [14, 36],
-                popupAnchor: [0, -32]
+                html: npsArrowheadSVG("nps-arrowhead"),
+                iconSize: [34, 42],
+                iconAnchor: [17, 42],
+                popupAnchor: [0, -38]
             });
 
             const stateIcon = L.divIcon({
@@ -852,8 +916,10 @@
                 if (!item || !Number.isFinite(item.lat) || !Number.isFinite(item.lng)) return;
                 const isState = item.type === "State";
                 const marker = L.marker([item.lat, item.lng], {
-                    icon: isState ? stateIcon : npsIcon
-                }).addTo(parkMarkerLayer);
+                    icon: isState ? stateIcon : npsIcon,
+                    pane: isState ? "stateParksPane" : "nationalParksPane",
+                    zIndexOffset: isState ? 0 : 1000
+                }).addTo(isState ? stateMarkerLayer : nationalMarkerLayer);
 
                 markerBounds.push([item.lat, item.lng]);
 
@@ -875,6 +941,43 @@
             if (markerBounds.length > 0) {
                 parkMap.fitBounds(markerBounds, { padding: [50, 50] });
             }
+
+            const nationalTotal = allParksData.filter((park) => park.type === "National").length;
+            const stateTotal = allParksData.filter((park) => park.type === "State").length;
+            document.getElementById("national-map-count").textContent = `${nationalTotal} National Parks`;
+            document.getElementById("state-map-count").textContent = `${stateTotal.toLocaleString()} State Parks`;
+        }
+
+        function npsArrowheadSVG(className = "") {
+            return `<svg class="${className}" viewBox="0 0 70 86" aria-hidden="true" focusable="false">
+                <path d="M35 2C23 8 12 10 5 10v30c0 20 12 34 30 43 18-9 30-23 30-43V10C57 10 47 8 35 2Z" fill="#9a4b18" stroke="#fff" stroke-width="3"/>
+                <circle cx="50" cy="24" r="6" fill="#f8d66d"/>
+                <path d="M10 48 27 25l9 12 7-9 17 24H10Z" fill="#f5f3e7"/>
+                <path d="M10 49h50v13H10z" fill="#2f6b38"/>
+                <path d="M22 60V29m0 2-9 15h18L22 31Zm0 8-12 20h24L22 39Z" stroke="#164c2b" stroke-width="4" stroke-linejoin="round"/>
+                <text x="45" y="69" text-anchor="middle" font-size="11" font-weight="900" fill="#fff">NPS</text>
+            </svg>`;
+        }
+
+        async function loadNationwideStateParkDirectory() {
+            if (nationwideStateDirectoryLoaded) return;
+            const status = document.getElementById("national-directory-status");
+            const states = Object.keys(STATE_NAMES).filter((code) => code !== "TN");
+            let completed = 1;
+            let failures = 0;
+            for (let offset = 0; offset < states.length; offset += 5) {
+                const batch = states.slice(offset, offset + 5);
+                const results = await Promise.allSettled(batch.map((stateCode) => ensureStateParkDirectory(stateCode, true)));
+                failures += results.filter((result) => result.status === "rejected" || result.value === false).length;
+                completed += batch.length;
+                syncAllParksData();
+                applyFilters();
+                const stateTotal = allParksData.filter((park) => park.type === "State").length;
+                status.textContent = `Loading every state's mapped park directory: ${completed} of 50 states checked • ${stateTotal.toLocaleString()} state-park destinations loaded so far. National parks remain visible as arrowheads.`;
+            }
+            nationwideStateDirectoryLoaded = true;
+            const stateTotal = allParksData.filter((park) => park.type === "State").length;
+            status.textContent = `${stateTotal.toLocaleString()} state-park destinations loaded after checking all 50 states${failures ? `; ${failures} state director${failures === 1 ? "y needs" : "ies need"} a retry` : ""}. National parks remain displayed with arrowheads above state-park clusters.`;
         }
 
         function selectParkByName(parkName) {
@@ -915,13 +1018,13 @@
             applyFilters();
         }
 
-        async function ensureStateParkDirectory(stateCode) {
-            if (loadedStateParkCodes.has(stateCode)) return;
+        async function ensureStateParkDirectory(stateCode, background = false) {
+            if (loadedStateParkCodes.has(stateCode)) return true;
             if (stateParkLoadPromises.has(stateCode)) return stateParkLoadPromises.get(stateCode);
 
             const status = document.getElementById("state-park-load-status");
             const stateName = STATE_NAMES[stateCode] || stateCode;
-            status.textContent = `Loading the complete mapped ${stateName} state-park directory…`;
+            if (!background) status.textContent = `Loading the complete mapped ${stateName} state-park directory…`;
 
             const promise = (async () => {
                 try {
@@ -944,21 +1047,30 @@
                         seen.add(name.toLowerCase());
                         const official = normalizeExternalUrl(tags.website || tags["contact:website"] || tags.url || "");
                         const description = tags.description || `${name} is a ${stateName} state-managed destination. Use the park and trail maps for orientation, then confirm hours, fees, camping, permits, and current alerts with the managing agency.`;
-                        MASTER_PARK_DATABASE[name] = {
+                        const existing = MASTER_PARK_DATABASE[name];
+                        const storageName = existing && (existing.type === "National" || (existing.type === "State" && existing.state !== stateCode))
+                            ? `${name} (${stateCode})`
+                            : name;
+                        const mappedRecord = {
                             lat: center[0], lng: center[1], state: stateCode, type: "State", desc: description,
                             history: `<p>${escapeHTML(description)}</p>`, official, hikes: [],
                             catalogSource: "Mapped state-park directory", sourceMeta: tags
                         };
-                        found.push(name);
+                        MASTER_PARK_DATABASE[storageName] = storageName === name && existing?.type === "State"
+                            ? { ...mappedRecord, ...existing, lat: center[0], lng: center[1], sourceMeta: { ...tags, ...(existing.sourceMeta || {}) } }
+                            : mappedRecord;
+                        found.push(storageName);
                     });
                     loadedStateParkCodes.add(stateCode);
                     syncAllParksData();
-                    status.textContent = found.length
-                        ? `${found.length} mapped ${stateName} state-park destinations loaded. Select a park to explore it.`
-                        : `No additional mapped ${stateName} state parks were returned. The existing verified destination remains available.`;
+                    if (!background) status.textContent = found.length
+                            ? `${found.length} mapped ${stateName} state-park destinations loaded. Select a park to explore it.`
+                            : `No additional mapped ${stateName} state parks were returned. The existing verified destination remains available.`;
+                    return true;
                 } catch (error) {
                     console.error("State park directory failed:", error);
-                    status.textContent = `${stateName}'s live state-park directory is temporarily unavailable. Existing verified parks remain available.`;
+                    if (!background) status.textContent = `${stateName}'s live state-park directory is temporarily unavailable. Existing verified parks remain available.`;
+                    return false;
                 } finally {
                     stateParkLoadPromises.delete(stateCode);
                 }
@@ -1014,6 +1126,9 @@
             updateCampsiteParkMap(master.lat, master.lng, parkName);
             document.getElementById("park-map-status").textContent = "Loading mapped park boundaries and trails…";
             document.getElementById("camp-map-status").textContent = "Loading mapped campgrounds and RV sites…";
+            document.getElementById("campground-count").textContent = "0";
+            document.getElementById("campground-directory").innerHTML = '<p class="text-xs text-slate-500 col-span-2 p-4 text-center">Loading campground, RV, tent-site, and facility details…</p>';
+            document.getElementById("official-camping-link").href = getOfficialCampingUrl(master);
 
             currentLoadedHikes = master.hikes || [];
             document.getElementById('trail-count').innerText = currentLoadedHikes.length;
@@ -1074,7 +1189,7 @@
                 const cacheKey = `${parkName}|${master.lat}|${master.lng}`;
                 const mapData = parkMapCache.has(cacheKey)
                     ? parkMapCache.get(cacheKey)
-                    : await fetchParkFeatures(parkName, master.lat, master.lng);
+                    : await fetchParkFeatures(parkName, master.lat, master.lng, master.type);
                 if (requestId !== activeMapRequest || currentSelectedPark?.name !== parkName) return;
                 parkMapCache.set(cacheKey, mapData);
                 currentParkMapData = mapData;
@@ -1082,17 +1197,19 @@
             } catch (error) {
                 if (requestId !== activeMapRequest) return;
                 console.error("Live park map data failed:", error);
-                currentParkMapData = { boundaries: [], trails: [], campsites: [] };
+                currentParkMapData = { boundaries: [], trails: [], campsites: [], campPitches: [], campFacilities: [] };
                 parkStatus.textContent = "The live trail overlay is temporarily unavailable. The topographic map and official source remain available.";
                 campStatus.textContent = "Live campground locations are temporarily unavailable. No estimated or shifted pins are shown.";
                 currentLoadedHikes = master.hikes || [];
                 document.getElementById("trail-count").textContent = currentLoadedHikes.length;
                 filterTrailsByDifficulty();
+                renderCampgroundDirectory([], master);
             }
         }
 
-        async function fetchParkFeatures(parkName, lat, lng) {
+        async function fetchParkFeatures(parkName, lat, lng, parkType = "State") {
             const safeName = escapeOverpassRegex(parkName.replace(/\s+(National|State|Wilderness|Resort) Park$/i, ""));
+            const fallbackRadius = parkType === "National" ? 60000 : 18000;
             const areaQuery = `[out:json][timeout:35];
                 area["name"~"${safeName}",i]["boundary"~"protected_area|national_park"]->.parkArea;
                 (
@@ -1100,32 +1217,61 @@
                     relation(area.parkArea)["route"~"^(hiking|foot)$"]["name"];
                     way(area.parkArea)["highway"~"^(path|footway|track)$"]["name"];
                     nwr(area.parkArea)["tourism"~"^(camp_site|caravan_site)$"];
+                    nwr(area.parkArea)["tourism"="camp_pitch"];
+                    nwr(area.parkArea)["amenity"~"^(toilets|shower|drinking_water|sanitary_dump_station|waste_disposal|bbq|restaurant|cafe|fuel|charging_station)$"];
                 );
                 out center geom;`;
 
-            let result = await queryOverpass(areaQuery);
-            let parsed = parseOverpassElements(result.elements || []);
+            let parsed = { boundaries: [], trails: [], campsites: [], campPitches: [], campFacilities: [] };
+            try {
+                const result = await queryOverpass(areaQuery);
+                parsed = parseOverpassElements(result.elements || []);
+            } catch (error) {
+                console.info("Park-area lookup incomplete; trying the broader nearby search.", error);
+            }
 
-            if (parsed.trails.length === 0 && parsed.campsites.length === 0) {
+            if (parsed.trails.length < 3 || parsed.campsites.length === 0) {
                 const fallbackQuery = `[out:json][timeout:35];(
-                    relation(around:25000,${lat},${lng})["route"~"^(hiking|foot)$"]["name"];
-                    way(around:25000,${lat},${lng})["highway"~"^(path|footway|track)$"]["name"];
-                    nwr(around:25000,${lat},${lng})["tourism"~"^(camp_site|caravan_site)$"];
+                    relation(around:${fallbackRadius},${lat},${lng})["route"~"^(hiking|foot)$"]["name"];
+                    way(around:${fallbackRadius},${lat},${lng})["highway"~"^(path|footway|track)$"]["name"];
+                    nwr(around:${fallbackRadius},${lat},${lng})["tourism"~"^(camp_site|caravan_site)$"];
+                    nwr(around:${fallbackRadius},${lat},${lng})["tourism"="camp_pitch"];
+                    nwr(around:${fallbackRadius},${lat},${lng})["amenity"~"^(toilets|shower|drinking_water|sanitary_dump_station|waste_disposal|bbq|restaurant|cafe|fuel|charging_station)$"];
                     relation(around:60000,${lat},${lng})["boundary"~"protected_area|national_park"]["name"~"${safeName}",i];
                 );out center geom;`;
-                result = await queryOverpass(fallbackQuery);
-                parsed = parseOverpassElements(result.elements || []);
+                const fallbackResult = await queryOverpass(fallbackQuery);
+                parsed = mergeParkMapData(parsed, parseOverpassElements(fallbackResult.elements || []));
             }
 
             return parsed;
         }
 
-        async function queryOverpass(query) {
+        function mergeParkMapData(primary, additional) {
+            const unique = (items, keyBuilder) => {
+                const found = new Map();
+                [...items].forEach((item) => found.set(keyBuilder(item), item));
+                return [...found.values()];
+            };
+            const campsites = unique([...(primary.campsites || []), ...(additional.campsites || [])], (item) => `${item.name.toLowerCase()}|${item.center.join("|")}`);
+            const campPitches = unique([...(primary.campPitches || []), ...(additional.campPitches || [])], (item) => item.key);
+            const campFacilities = unique([...(primary.campFacilities || []), ...(additional.campFacilities || [])], (item) => item.key);
+            campsites.forEach((camp) => {
+                camp.pitches = campPitches.filter((pitch) => calculateRouteMiles([camp.center, pitch.center]) <= 1.5);
+                camp.facilities = campFacilities.filter((facility) => calculateRouteMiles([camp.center, facility.center]) <= 1.5);
+            });
+            return {
+                boundaries: unique([...(primary.boundaries || []), ...(additional.boundaries || [])], (item) => `${item.name}|${item.geometry?.length || 0}`),
+                trails: unique([...(primary.trails || []), ...(additional.trails || [])], (item) => item.name.toLowerCase()),
+                campsites, campPitches, campFacilities
+            };
+        }
+
+        async function queryOverpass(query, timeoutMs = 45000) {
             let lastError = null;
             for (const endpoint of OVERPASS_ENDPOINTS) {
                 try {
                     const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 45000);
+                    const timer = setTimeout(() => controller.abort(), timeoutMs);
                     const response = await fetch(endpoint, {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
@@ -1145,6 +1291,8 @@
         function parseOverpassElements(elements) {
             const trails = [];
             const campsites = [];
+            const campPitches = [];
+            const campFacilities = [];
             const boundaries = [];
             const seenTrails = new Set();
             const seenCamps = new Set();
@@ -1166,18 +1314,66 @@
                     const key = `${name}|${center[0].toFixed(4)}|${center[1].toFixed(4)}`;
                     if (!seenCamps.has(key)) {
                         seenCamps.add(key);
-                        campsites.push({ name, center, website: tags.website || tags["contact:website"] || "", rv: tags.caravans || tags.motorhome || "unknown" });
+                        campsites.push({
+                            name, center, key,
+                            website: normalizeExternalUrl(tags.website || tags["contact:website"] || tags.url || ""),
+                            phone: tags.phone || tags["contact:phone"] || "",
+                            operator: tags.operator || "",
+                            rv: tags.caravans || tags.motorhome || "unknown",
+                            tents: tags.tents || "unknown",
+                            cabins: tags.cabins || tags.chalets || "unknown",
+                            electric: tags.electric_hookup || tags.power_supply || "unknown",
+                            dump: tags.sanitary_dump_station || "unknown",
+                            water: tags.drinking_water || "unknown",
+                            toilets: tags.toilets || "unknown",
+                            showers: tags.shower || tags.showers || "unknown",
+                            fee: tags.fee || "unknown",
+                            reservation: tags.reservation || tags.booking || "unknown",
+                            capacity: tags.capacity || "",
+                            rvCapacity: tags["capacity:caravans"] || tags["capacity:motorhomes"] || "",
+                            tentCapacity: tags["capacity:tents"] || "",
+                            maxstay: tags.maxstay || "",
+                            openingHours: tags.opening_hours || "",
+                            internet: tags.internet_access || "unknown",
+                            campfire: tags.openfire || tags.campfire || "unknown",
+                            picnic: tags.picnic_table || "unknown",
+                            laundry: tags.laundry || "unknown",
+                            dogs: tags.dog || tags.dogs || "unknown",
+                            description: tags.description || "",
+                            osmId: `${element.type}/${element.id}`
+                        });
                     }
+                    return;
+                }
+
+                if (tags.tourism === "camp_pitch" && center) {
+                    campPitches.push({ key: `${element.type}/${element.id}`, center, name: tags.name || tags.ref || "Mapped campsite", tags });
+                    return;
+                }
+
+                if (/^(toilets|shower|drinking_water|sanitary_dump_station|waste_disposal|bbq|restaurant|cafe|fuel|charging_station)$/.test(tags.amenity || "") && center) {
+                    campFacilities.push({ key: `${element.type}/${element.id}`, center, type: tags.amenity, name: tags.name || formatTagLabel(tags.amenity), tags });
                     return;
                 }
 
                 const isHikingRoute = /^(hiking|foot)$/.test(tags.route || "");
                 if ((isHikingRoute || tags.highway) && isDestinationTrailName(tags.name, tags) && geometry.length > 1) {
                     const key = tags.name.toLowerCase();
-                    if (!seenTrails.has(key)) {
+                    if (seenTrails.has(key)) {
+                        const existingTrail = trails.find((trail) => trail._key === key);
+                        const candidateMiles = calculateRouteMiles(geometry);
+                        if (existingTrail && candidateMiles > existingTrail.routeMiles) {
+                            existingTrail.route = geometry;
+                            existingTrail.routeMiles = candidateMiles;
+                            if (!tags.distance) existingTrail.dist = formatTrailDistance("", candidateMiles);
+                            existingTrail.osmId = `${element.type}/${element.id}`;
+                            existingTrail.mapSource = `https://www.openstreetmap.org/${element.type}/${element.id}`;
+                        }
+                    } else {
                         seenTrails.add(key);
                         const miles = calculateRouteMiles(geometry);
                         trails.push({
+                            _key: key,
                             name: tags.name,
                             dist: formatTrailDistance(tags.distance, miles),
                             diff: difficultyFromTags(tags),
@@ -1185,23 +1381,32 @@
                             area: tags.operator || tags.network || (isHikingRoute ? "Named hiking route" : "Park trail"),
                             desc: buildTrailDescription(tags, isHikingRoute),
                             route: geometry,
+                            routeMiles: miles,
                             osmId: `${element.type}/${element.id}`,
                             sourceType: isHikingRoute ? "Named hiking route" : "Named mapped trail",
                             surface: tags.surface || "Not listed",
                             trailVisibility: tags.trail_visibility || "Not listed",
+                            uses: trailUses(tags),
+                            dogPolicy: formatAccessValue(tags.dog || tags.dogs || "unknown"),
                             ascent: tags.ascent || "",
                             descent: tags.descent || "",
-                            website: normalizeExternalUrl(tags.website || tags.url || "")
+                            website: normalizeExternalUrl(tags.website || tags.url || ""),
+                            mapSource: `https://www.openstreetmap.org/${element.type}/${element.id}`
                         });
                     }
                 }
+            });
+
+            campsites.forEach((camp) => {
+                camp.pitches = campPitches.filter((pitch) => calculateRouteMiles([camp.center, pitch.center]) <= 1.5);
+                camp.facilities = campFacilities.filter((facility) => calculateRouteMiles([camp.center, facility.center]) <= 1.5);
             });
 
             trails.sort((a, b) => {
                 const routePriority = Number(b.sourceType === "Named hiking route") - Number(a.sourceType === "Named hiking route");
                 return routePriority || a.name.localeCompare(b.name);
             });
-            return { boundaries, trails, campsites: campsites.sort((a, b) => a.name.localeCompare(b.name)) };
+            return { boundaries, trails, campsites: campsites.sort((a, b) => a.name.localeCompare(b.name)), campPitches, campFacilities };
         }
 
         function extractElementGeometry(element) {
@@ -1215,6 +1420,7 @@
         function renderParkFeatures(mapData, parkName, master) {
             parkFeatureLayer.clearLayers();
             campsiteFeatureLayer.clearLayers();
+            campgroundMarkers = [];
             const parkBounds = [];
 
             mapData.boundaries.forEach((boundary) => {
@@ -1239,12 +1445,30 @@
             else individualParkMap.setView([master.lat, master.lng], 11);
 
             const campBounds = [];
-            mapData.campsites.forEach((camp) => {
-                const popup = `<b>${escapeHTML(camp.name)}</b><br>${camp.rv === "yes" ? "RV access mapped" : "Campground location"}`;
-                L.marker(camp.center, {
+            mapData.campsites.forEach((camp, index) => {
+                const modes = [camp.tents === "yes" ? "Tent camping" : "", camp.rv === "yes" ? "RV camping" : ""].filter(Boolean).join(" • ") || "Camping type not published";
+                const popup = `<b>${escapeHTML(camp.name)}</b><br>${escapeHTML(modes)}<br>${camp.electric === "yes" ? "Electric hookup mapped" : "Verify hookups with the campground"}<br><button type="button" onclick="focusCampground(${index})" style="margin-top:6px;font-weight:700;color:#047857">Open campground grounds map</button>`;
+                const marker = L.marker(camp.center, {
                     icon: L.divIcon({ className: "state-pin", html: '<i class="fa-solid fa-campground"></i>', iconSize: [30, 30], iconAnchor: [15, 30] })
                 }).bindPopup(popup).addTo(campsiteFeatureLayer);
+                campgroundMarkers.push(marker);
                 campBounds.push(camp.center);
+            });
+
+            (mapData.campPitches || []).forEach((pitch) => {
+                L.circleMarker(pitch.center, { radius: 4, color: "#92400e", weight: 1, fillColor: "#fbbf24", fillOpacity: .9 })
+                    .bindTooltip(escapeHTML(pitch.name))
+                    .addTo(campsiteFeatureLayer);
+                campBounds.push(pitch.center);
+            });
+
+            const facilityIcons = { toilets: "restroom", shower: "shower", drinking_water: "faucet-drip", sanitary_dump_station: "truck-droplet", waste_disposal: "trash", bbq: "fire-burner", restaurant: "utensils", cafe: "mug-hot", fuel: "gas-pump", charging_station: "charging-station" };
+            (mapData.campFacilities || []).forEach((facility) => {
+                L.circleMarker(facility.center, { radius: 6, color: "#fff", weight: 2, fillColor: "#0369a1", fillOpacity: 1 })
+                    .bindTooltip(`${escapeHTML(facility.name)} (${escapeHTML(formatTagLabel(facility.type))})`)
+                    .bindPopup(`<b>${escapeHTML(facility.name)}</b><br><i class="fa-solid fa-${facilityIcons[facility.type] || 'circle-info'}"></i> ${escapeHTML(formatTagLabel(facility.type))}`)
+                    .addTo(campsiteFeatureLayer);
+                campBounds.push(facility.center);
             });
 
             if (campBounds.length) campsiteParkMap.fitBounds(campBounds, { padding: [35, 35], maxZoom: 15 });
@@ -1254,8 +1478,9 @@
                 ? `${mapData.trails.length} named mapped trail${mapData.trails.length === 1 ? "" : "s"}${mapData.boundaries.length ? ` and ${mapData.boundaries.length} boundary feature${mapData.boundaries.length === 1 ? "" : "s"}` : ""}.`
                 : "No named trail geometry was returned for this park. Use the official park maps link for the authoritative map.";
             document.getElementById("camp-map-status").textContent = mapData.campsites.length
-                ? `${mapData.campsites.length} mapped campground or RV location${mapData.campsites.length === 1 ? "" : "s"}.`
+                ? `${mapData.campsites.length} mapped campground or RV location${mapData.campsites.length === 1 ? "" : "s"}, ${(mapData.campPitches || []).length} individual mapped site${(mapData.campPitches || []).length === 1 ? "" : "s"}, and ${(mapData.campFacilities || []).length} mapped facilit${(mapData.campFacilities || []).length === 1 ? "y" : "ies"}.`
                 : "No campground geometry was returned. No estimated or shifted pins are shown.";
+            renderCampgroundDirectory(mapData.campsites, master);
 
             const officialUrl = getOfficialParkUrl(master);
             const recommended = (master.hikes || []).map((hike) => ({ ...hike, nps: hike.nps || officialUrl, source: "recommended" }));
@@ -1264,7 +1489,23 @@
             [...recommended, ...discovered].forEach((trail) => {
                 const key = trail.name.toLowerCase().replace(/\s+(trail|loop|route)$/i, "").trim();
                 const existing = deduped.get(key);
-                if (!existing || (!existing.route && trail.route)) deduped.set(key, { ...existing, ...trail });
+                if (!existing) {
+                    deduped.set(key, trail);
+                } else if (!existing.route && trail.route) {
+                    deduped.set(key, {
+                        ...trail,
+                        ...existing,
+                        route: trail.route,
+                        osmId: trail.osmId,
+                        mapSource: trail.mapSource,
+                        website: existing.website || trail.website,
+                        surface: existing.surface || trail.surface,
+                        trailVisibility: existing.trailVisibility || trail.trailVisibility,
+                        uses: existing.uses || trail.uses,
+                        dogPolicy: existing.dogPolicy || trail.dogPolicy,
+                        sourceType: `${existing.sourceType || "Published trail directory"} + mapped route`
+                    });
+                }
             });
             currentLoadedHikes = [...deduped.values()];
             document.getElementById("trail-count").textContent = currentLoadedHikes.length;
@@ -1273,6 +1514,63 @@
                 individualParkMap.invalidateSize();
                 campsiteParkMap.invalidateSize();
             }, 100);
+        }
+
+        function renderCampgroundDirectory(campsites, master) {
+            const container = document.getElementById("campground-directory");
+            document.getElementById("campground-count").textContent = campsites.length;
+            document.getElementById("official-camping-link").href = getOfficialCampingUrl(master);
+            if (!campsites.length) {
+                container.innerHTML = `<div class="col-span-2 p-5 rounded-xl border border-amber-200 bg-amber-50 text-sm text-amber-900">
+                    No campground record was returned by the live grounds map. This does not prove that camping is unavailable. Use the official camping-information button for reservations, campground loops, RV limits, tent rules, fees, and seasonal openings.
+                </div>`;
+                document.getElementById("park-rv").textContent = "No mapped campground record was returned. Check the official park camping page before ruling out RV or tent camping.";
+                return;
+            }
+
+            const badge = (label, value) => {
+                const normalized = String(value || "unknown").toLowerCase();
+                const known = !/^(unknown|not published|)$/.test(normalized);
+                const displayed = normalized === "yes" ? "Mapped" : normalized === "no" ? "No" : formatAccessValue(value);
+                return `<span class="px-2 py-1 border rounded-md text-[10px] font-bold ${known ? 'camp-amenity-known' : 'camp-amenity-unknown'}">${escapeHTML(label)}: ${escapeHTML(displayed)}</span>`;
+            };
+
+            container.innerHTML = campsites.map((camp, index) => {
+                const nearbyTypes = new Set((camp.facilities || []).map((facility) => facility.type));
+                const water = camp.water !== "unknown" ? camp.water : (nearbyTypes.has("drinking_water") ? "yes" : "unknown");
+                const toilets = camp.toilets !== "unknown" ? camp.toilets : (nearbyTypes.has("toilets") ? "yes" : "unknown");
+                const showers = camp.showers !== "unknown" ? camp.showers : (nearbyTypes.has("shower") ? "yes" : "unknown");
+                const dump = camp.dump !== "unknown" ? camp.dump : (nearbyTypes.has("sanitary_dump_station") ? "yes" : "unknown");
+                const sourceUrl = camp.website || `https://www.openstreetmap.org/${camp.osmId}`;
+                const capacities = [camp.capacity ? `${camp.capacity} total spaces` : "", camp.rvCapacity ? `${camp.rvCapacity} RV spaces` : "", camp.tentCapacity ? `${camp.tentCapacity} tent spaces` : "", camp.pitches?.length ? `${camp.pitches.length} individual sites mapped nearby` : ""].filter(Boolean).join(" • ");
+                const details = [camp.description, capacities, camp.openingHours ? `Hours/season: ${camp.openingHours}` : "", camp.maxstay ? `Maximum stay: ${camp.maxstay}` : "", camp.operator ? `Operator: ${camp.operator}` : "", camp.phone ? `Phone: ${camp.phone}` : ""].filter(Boolean);
+                return `<article class="p-5 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start gap-3">
+                        <div><h4 class="font-black text-slate-900">${escapeHTML(camp.name)}</h4><p class="text-xs text-slate-500 mt-1">${escapeHTML(details.join(" • ") || "Grounds location mapped; facility details require official verification.")}</p></div>
+                        <i class="fa-solid fa-campground text-emerald-700 text-xl"></i>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        ${badge("Tent camping", camp.tents)}${badge("RV/motorhome", camp.rv)}${badge("Electric hookup", camp.electric)}${badge("Dump station", dump)}${badge("Drinking water", water)}${badge("Restrooms", toilets)}${badge("Showers", showers)}${badge("Reservations", camp.reservation)}${badge("Fee", camp.fee)}${badge("Cabins", camp.cabins)}${badge("Campfires", camp.campfire)}${badge("Picnic tables", camp.picnic)}${badge("Internet", camp.internet)}${badge("Dogs", camp.dogs)}
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-3">“Not published—verify” means the mapped record does not contain that field; it is not a claim that the amenity is unavailable.</p>
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <button onclick="focusCampground(${index})" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg"><i class="fa-solid fa-map-location-dot mr-1"></i> View Grounds Map</button>
+                        <a href="${escapeHTML(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold text-xs rounded-lg">Campground Source</a>
+                    </div>
+                </article>`;
+            }).join("");
+            document.getElementById("park-rv").textContent = `${campsites.length} mapped campground or RV location${campsites.length === 1 ? "" : "s"} found. Open the Campground & RV Planner for published hookups, tent/RV access, water, restrooms, showers, fees, reservations, capacities, and individual mapped sites.`;
+        }
+
+        function focusCampground(index) {
+            const camp = currentParkMapData?.campsites?.[index];
+            if (!camp || !campsiteParkMap) return;
+            const nearby = [camp.center, ...(camp.pitches || []).map((pitch) => pitch.center), ...(camp.facilities || []).map((facility) => facility.center)];
+            if (nearby.length > 1) campsiteParkMap.fitBounds(nearby, { padding: [40, 40], maxZoom: 18 });
+            else campsiteParkMap.flyTo(camp.center, 17);
+            campgroundMarkers[index]?.openPopup();
+            document.getElementById("camp-map-status").textContent = `${camp.name}: ${camp.pitches?.length || 0} individual mapped site${camp.pitches?.length === 1 ? "" : "s"} and ${camp.facilities?.length || 0} nearby mapped facilit${camp.facilities?.length === 1 ? "y" : "ies"}. Zoom in for campground roads and site layout.`;
+            document.getElementById("campsite-park-map").scrollIntoView({ behavior: "smooth", block: "center" });
         }
 
         function filterTrailsByDifficulty() {
@@ -1289,13 +1587,14 @@
                 filteredHikes.forEach((h) => {
                     const sourceIndex = currentLoadedHikes.indexOf(h);
                     hikesContainer.innerHTML += `
-                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center hover:border-emerald-500 transition shadow-sm">
-                            <div>
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:border-emerald-500 transition shadow-sm">
+                            <div class="min-w-0">
                                 <div class="flex items-center gap-2">
                                     <p class="text-sm font-bold text-slate-900">${escapeHTML(h.name)}</p>
                                     <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-md">${escapeHTML(h.diff || 'General')}</span>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-ruler-horizontal mr-1 text-emerald-600"></i> Distance: ${escapeHTML(h.dist || 'N/A')} • ${escapeHTML(h.sourceType || h.area || 'Recommended trail')}</p>
+                                <p class="text-xs text-slate-700 mt-2 leading-relaxed">${escapeHTML(String(h.desc || 'Open the guide for mapped route notes and current-condition verification links.').slice(0, 210))}${String(h.desc || '').length > 210 ? '…' : ''}</p>
                             </div>
                             <button onclick="openTrailModal(${sourceIndex})" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 whitespace-nowrap">
                                 <span>Inspect Trail Guide</span>
@@ -1317,15 +1616,25 @@
             document.getElementById('modal-trail-park').innerText = currentSelectedPark ? currentSelectedPark.name : 'National Park';
             document.getElementById('modal-trail-dist').innerText = hike.dist || 'N/A';
             document.getElementById('modal-trail-diff').innerText = hike.diff || 'General';
-            document.getElementById('modal-trail-diff-text').innerText = hike.diff || 'Moderate';
-            document.getElementById('modal-trail-elev').innerText = hike.elev || '350 ft';
+            document.getElementById('modal-trail-diff-text').innerText = hike.diff || 'Unrated';
+            document.getElementById('modal-trail-elev').innerText = hike.elev || 'Loads when mapped';
+            document.getElementById('modal-trail-dogs').innerText = hike.dogPolicy || 'Check official rules';
             document.getElementById('modal-trail-area').innerText = hike.area || 'Park Grounds';
             document.getElementById('modal-trail-desc').innerText = hike.desc || 'Follow official park trail signs carefully and stay on designated paths.';
             document.getElementById('modal-trail-source').innerText = hike.sourceType || (hike.source === "recommended" ? "Park Blueprint recommendation" : "Mapped trail data");
             document.getElementById('modal-trail-surface').innerText = hike.surface || 'Not listed—check the official park guide';
+            document.getElementById('modal-trail-visibility').innerText = hike.trailVisibility && hike.trailVisibility !== "Not listed" ? formatTagLabel(hike.trailVisibility) : 'Not published—verify';
+            document.getElementById('modal-trail-uses').innerText = hike.uses || 'Hiking; verify other uses';
             
             const npsLink = document.getElementById('modal-trail-nps-link');
             npsLink.href = normalizeExternalUrl(hike.website || hike.nps || getOfficialParkUrl(MASTER_PARK_DATABASE[currentSelectedPark.name])) || getOfficialParkUrl(MASTER_PARK_DATABASE[currentSelectedPark.name]);
+            const mapSourceLink = document.getElementById('modal-trail-map-source');
+            if (hike.mapSource || hike.osmId) {
+                mapSourceLink.href = hike.mapSource || `https://www.openstreetmap.org/${hike.osmId}`;
+                mapSourceLink.classList.remove('hidden');
+            } else {
+                mapSourceLink.classList.add('hidden');
+            }
 
             document.getElementById('trail-modal').classList.remove('hidden');
 
@@ -1541,6 +1850,14 @@
             return npsMatch ? `https://www.nps.gov/${npsMatch[1].toLowerCase()}/planyourvisit/maps.htm` : official;
         }
 
+        function getOfficialCampingUrl(master) {
+            const official = getOfficialParkUrl(master).replace(/\/$/, "");
+            const npsMatch = official.match(/nps\.gov\/([a-z]{4})(?:\/|$)/i);
+            if (npsMatch) return `https://www.nps.gov/${npsMatch[1].toLowerCase()}/planyourvisit/campgrounds.htm`;
+            if (/tnstateparks\.com\/parks\//i.test(official) && !/\/camping$/i.test(official)) return `${official}/camping`;
+            return official;
+        }
+
         function normalizeExternalUrl(value) {
             try {
                 const url = new URL(String(value || ""), window.location.href);
@@ -1611,8 +1928,11 @@
             if (value.length < 4 || !/[A-Za-z]{3}/.test(value)) return false;
             if (/^\d+(?:[.\-]\d+)?[A-Z]*$/i.test(value)) return false;
             if (/^(?:FS|FR|SR|CR|NFS|Route)?\s*\d+(?:[.\-]\d+)?[A-Z]*$/i.test(value)) return false;
+            if (/\b(?:campsite|campground|camp loop|camp spur|site spur)\b/i.test(value)) return false;
             if (/\b(?:road|rd\.?|highway|hwy\.?|drive|dr\.?|lane|ln\.?)$/i.test(value)) return false;
-            if (tags.highway === "track" && !/\b(trail|path|loop|way|walk|ridge|falls|creek|canyon|mountain|summit|overlook)\b/i.test(value)) return false;
+            const isRoute = /^(hiking|foot)$/.test(tags.route || "");
+            if (!isRoute && !/\b(trail|path|loop|route|walk|boardwalk|greenway|footpath)\b/i.test(value)) return false;
+            if (tags.highway === "track" && !/\b(trail|path|loop|route|way|walk|greenway|footpath)\b/i.test(value)) return false;
             return true;
         }
 
@@ -1624,13 +1944,39 @@
 
         function buildTrailDescription(tags, isHikingRoute) {
             const details = [];
-            if (tags.description) details.push(tags.description);
-            else details.push(isHikingRoute ? "A named hiking route mapped through the park." : "A named trail segment mapped within the park.");
-            if (tags.surface) details.push(`Surface: ${tags.surface.replaceAll("_", " ")}.`);
-            if (tags.trail_visibility) details.push(`Trail visibility: ${tags.trail_visibility.replaceAll("_", " ")}.`);
+            if (tags.description || tags.note) details.push(tags.description || tags.note);
+            else details.push(isHikingRoute ? "This is a named hiking route assembled from mapped trail geometry." : "This is a named trail with mapped centerline geometry, not a campground drive or campsite spur.");
+            if (tags.surface) details.push(`Mapped surface: ${formatTagLabel(tags.surface)}.`);
+            else details.push("The mapped record does not publish a surface, so expect conditions to vary and check the official trail guide before choosing footwear or mobility equipment.");
+            if (tags.trail_visibility) details.push(`Trail visibility is mapped as ${formatTagLabel(tags.trail_visibility)}.`);
+            if (tags.sac_scale) details.push(`Mapped hiking classification: ${formatTagLabel(tags.sac_scale)}.`);
+            if (tags.highway === "steps") details.push("The mapped route includes steps.");
+            if (tags.ford === "yes") details.push("The mapped route includes a ford or water crossing.");
+            if (tags.access && !/^(yes|permissive|designated)$/.test(tags.access)) details.push(`Mapped access: ${formatAccessValue(tags.access)}.`);
+            const uses = trailUses(tags);
+            if (uses !== "Hiking; verify other uses") details.push(`Mapped uses: ${uses}.`);
             if (tags.ascent || tags.descent) details.push(`Published route data: ${tags.ascent ? `${tags.ascent} ascent` : "ascent not listed"}${tags.descent ? `, ${tags.descent} descent` : ""}.`);
-            details.push("Confirm current closures, conditions, and permitted uses with the managing park.");
+            if (tags.operator) details.push(`Maintained or managed by ${tags.operator}.`);
+            details.push("Check the official park source for current closures, hazards, seasonal conditions, permits, and allowed uses before departure.");
             return details.join(" ");
+        }
+
+        function trailUses(tags = {}) {
+            const uses = ["Hiking"];
+            if (/^(yes|designated|permissive)$/.test(tags.bicycle || "")) uses.push("Bicycles");
+            if (/^(yes|designated|permissive)$/.test(tags.horse || "")) uses.push("Horses");
+            if (/^(yes|designated|leashed|permissive)$/.test(tags.dog || tags.dogs || "")) uses.push("Dogs");
+            if (tags.ski === "yes" || tags["piste:type"] === "nordic") uses.push("Skiing");
+            return uses.length > 1 ? uses.join(", ") : "Hiking; verify other uses";
+        }
+
+        function formatAccessValue(value) {
+            const labels = { yes: "Yes", no: "No", designated: "Designated", permissive: "Permitted", leashed: "Leashed", private: "Private", customers: "Guests only", unknown: "Not published—verify" };
+            return labels[String(value || "").toLowerCase()] || formatTagLabel(value);
+        }
+
+        function formatTagLabel(value) {
+            return String(value || "Not published").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
         }
 
         function calculateRouteMiles(route) {
@@ -1752,6 +2098,12 @@
         }
 
         document.head.insertAdjacentHTML('beforeend', `<style>.active-tab { background-color: rgb(226 232 240); color: rgb(6 95 70); border-bottom: 2px solid rgb(5 150 105); } .inactive-tab { color: rgb(100 116 139); }</style>`);
+
+        document.addEventListener("fullscreenchange", () => {
+            setTimeout(() => {
+                [parkMap, individualParkMap, campsiteParkMap, modalTrailMap].forEach((mapInstance) => mapInstance?.invalidateSize());
+            }, 150);
+        });
 
         window.addEventListener('DOMContentLoaded', init);
     </script>
