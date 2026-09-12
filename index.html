@@ -127,6 +127,47 @@
                 <p id="national-directory-status" class="text-xs text-slate-500 mt-3">63 national parks and a nationwide state-park directory are built into this page—no directory download is required.</p>
             </section>
 
+            <!-- PARKS NEAR ME -->
+            <section class="bg-gradient-to-br from-emerald-800 to-teal-900 text-white rounded-2xl p-6 shadow-lg">
+                <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+                    <div class="lg:w-1/3">
+                        <h2 class="text-lg font-black flex items-center gap-2"><i class="fa-solid fa-location-dot text-amber-300"></i> Parks Near Me</h2>
+                        <p class="text-xs text-emerald-100 mt-1 leading-relaxed">Enter a city, town, or ZIP code—or use your device location—to rank the closest parks by straight-line distance.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+                        <div class="sm:col-span-2">
+                            <label for="near-location-input" class="block text-xs font-bold text-emerald-100 mb-1">City, town, or ZIP code</label>
+                            <input id="near-location-input" type="search" onkeydown="if(event.key === 'Enter') findParksNearPlace()" placeholder="Whitefish, Montana" class="w-full bg-white text-slate-900 border border-white/40 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        </div>
+                        <div>
+                            <label for="near-radius" class="block text-xs font-bold text-emerald-100 mb-1">Search radius</label>
+                            <select id="near-radius" onchange="repeatNearbySearch()" class="w-full bg-white text-slate-900 border border-white/40 rounded-xl p-3 text-sm focus:outline-none">
+                                <option value="25">25 miles</option>
+                                <option value="50">50 miles</option>
+                                <option value="100" selected>100 miles</option>
+                                <option value="250">250 miles</option>
+                                <option value="500">500 miles</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="near-type" class="block text-xs font-bold text-emerald-100 mb-1">Park type</label>
+                            <select id="near-type" onchange="repeatNearbySearch()" class="w-full bg-white text-slate-900 border border-white/40 rounded-xl p-3 text-sm focus:outline-none">
+                                <option value="ALL">National & State</option>
+                                <option value="National">National Parks</option>
+                                <option value="State">State Parks</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3 mt-4">
+                    <button onclick="findParksNearPlace()" class="px-5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-black"><i class="fa-solid fa-magnifying-glass mr-2"></i>Find Nearby Parks</button>
+                    <button onclick="findParksFromDevice()" class="px-5 py-3 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white text-sm font-bold"><i class="fa-solid fa-crosshairs mr-2"></i>Use My Location</button>
+                </div>
+                <p id="near-status" class="text-xs text-emerald-100 mt-3" aria-live="polite">Location access is requested only if you choose “Use My Location.”</p>
+                <p class="text-[10px] text-emerald-200 mt-1">Place search powered by <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">OpenStreetMap contributors</a>.</p>
+                <div id="near-results" class="hidden grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-4"></div>
+            </section>
+
             <!-- FILTER BAR -->
             <section class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg relative overflow-hidden">
                 <h2 class="text-xs font-bold text-emerald-800 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -179,6 +220,12 @@
                     <p id="park-desc" class="text-emerald-50 text-sm max-w-3xl leading-relaxed"></p>
                 </div>
                 <div class="z-10 w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                    <button onclick="switchTab('camping')" class="bg-white text-emerald-900 hover:bg-emerald-50 font-black px-5 py-4 rounded-xl transition flex items-center justify-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-campground"></i> Camping
+                    </button>
+                    <button onclick="switchTab('hiking')" class="bg-white text-emerald-900 hover:bg-emerald-50 font-black px-5 py-4 rounded-xl transition flex items-center justify-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-person-hiking"></i> Hiking Trails
+                    </button>
                     <a id="official-park-link" href="#" target="_blank" rel="noopener noreferrer" class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold px-5 py-4 rounded-xl transition flex items-center justify-center gap-2 whitespace-nowrap">
                         <i class="fa-solid fa-map"></i> Official Park Maps
                     </a>
@@ -189,9 +236,10 @@
             </div>
 
             <!-- PARK TABS HEADER -->
-            <div class="flex border-b border-slate-200 gap-2 overflow-x-auto pb-1">
-                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Overview & Amenities</button>
-                <button onclick="switchTab('maps')" id="tab-btn-maps" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Interactive Topo Maps & Trails</button>
+            <div id="park-section-nav" class="sticky top-[72px] z-[500] bg-slate-50/95 backdrop-blur flex border-b border-slate-200 gap-2 overflow-x-auto px-2 pt-2 rounded-t-xl shadow-sm">
+                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active-tab px-5 py-3 font-bold text-sm rounded-t-xl transition whitespace-nowrap"><i class="fa-solid fa-landmark mr-1.5"></i>Park Overview</button>
+                <button onclick="switchTab('camping')" id="tab-btn-camping" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition whitespace-nowrap"><i class="fa-solid fa-campground mr-1.5"></i>Camping & RV</button>
+                <button onclick="switchTab('hiking')" id="tab-btn-hiking" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition whitespace-nowrap"><i class="fa-solid fa-person-hiking mr-1.5"></i>Hiking Trails</button>
                 <button onclick="switchTab('media')" id="tab-btn-media" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Video Guides</button>
                 <button onclick="switchTab('feed')" id="tab-btn-feed" class="tab-btn inactive-tab px-5 py-3 font-bold text-sm rounded-t-xl transition">Community Field Notes</button>
             </div>
@@ -235,31 +283,26 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- PARK LANDING-PAGE MAP -->
+                <div class="md:col-span-3 bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
+                        <div>
+                            <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-map"></i> Park Map</h3>
+                            <p class="text-xs text-slate-500 mt-1">Topographic park overview with built-in official NPS trail routes where published.</p>
+                        </div>
+                        <button onclick="toggleFullScreen('individual-park-map')" class="text-xs text-emerald-700 font-bold hover:underline flex items-center gap-1"><i class="fa-solid fa-expand"></i> Fullscreen</button>
+                    </div>
+                    <div class="relative h-[480px] mt-3">
+                        <div id="individual-park-map" class="absolute inset-0 rounded-xl bg-slate-100 border border-slate-300 z-10"></div>
+                        <div id="park-map-status" class="map-status">Select a park to load mapped park features.</div>
+                    </div>
+                </div>
             </div>
 
-            <!-- TAB 2: INTERACTIVE TOPO MAPS & COMPLETE TRAILS -->
-            <div id="tab-maps" class="tab-content hidden space-y-6">
-                
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- INTERACTIVE TOPO PARK OVERVIEW MAP -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fa-solid fa-map"></i> Topographic Park Overview
-                            </h3>
-                            <button onclick="toggleFullScreen('individual-park-map')" class="text-xs text-emerald-700 font-bold hover:underline flex items-center gap-1">
-                                <i class="fa-solid fa-expand"></i> Fullscreen
-                            </button>
-                        </div>
-                        <p class="text-xs text-slate-500 mb-4">Esri topographic map with built-in official NPS routes where published. The directory remains usable even if optional community-map enrichment is unavailable.</p>
-                        <div class="relative flex-1 min-h-80">
-                            <div id="individual-park-map" class="absolute inset-0 rounded-xl bg-slate-100 border border-slate-300 z-10"></div>
-                            <div id="park-map-status" class="map-status">Open this tab to load mapped park features.</div>
-                        </div>
-                    </div>
-
-                    <!-- INTERACTIVE CAMPSITE TOPO MAP -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
+            <!-- TAB 2: CAMPING & RV -->
+            <div id="tab-camping" class="tab-content hidden space-y-6">
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-md font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-2">
                                 <i class="fa-solid fa-campground"></i> Campground Grounds Map
@@ -269,11 +312,10 @@
                             </button>
                         </div>
                         <p class="text-xs text-slate-500 mb-4">Official NPS campground coordinates and published campsite details—never a fabricated offset pin.</p>
-                        <div class="relative flex-1 min-h-80">
+                        <div class="relative h-[480px]">
                             <div id="campsite-park-map" class="absolute inset-0 rounded-xl bg-slate-100 border border-slate-300 z-10"></div>
-                            <div id="camp-map-status" class="map-status">Open this tab to load mapped campgrounds.</div>
+                            <div id="camp-map-status" class="map-status">Open the camping page to view mapped campgrounds.</div>
                         </div>
-                    </div>
                 </div>
 
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
@@ -294,7 +336,10 @@
                     </div>
                 </div>
 
-                <!-- COMPLETE TRAIL DIRECTORY LISTING -->
+            </div>
+
+            <!-- TAB 3: HIKING TRAILS -->
+            <div id="tab-hiking" class="tab-content hidden space-y-6">
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div>
@@ -315,7 +360,7 @@
 
             </div>
 
-            <!-- TAB 3: MEDIA / YOUTUBE GUIDES -->
+            <!-- TAB 4: MEDIA / YOUTUBE GUIDES -->
             <div id="tab-media" class="tab-content hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                 <h3 class="text-md font-bold text-emerald-800 mb-4 uppercase tracking-wider"><i class="fa-solid fa-video mr-2"></i>Park Blueprint Channel Guides</h3>
                 <div id="video-container" class="aspect-video max-w-3xl mx-auto rounded-xl overflow-hidden bg-slate-900 border border-slate-300 flex items-center justify-center">
@@ -323,7 +368,7 @@
                 </div>
             </div>
 
-            <!-- TAB 4: COMMUNITY FIELD NOTES -->
+            <!-- TAB 5: COMMUNITY FIELD NOTES -->
             <div id="tab-feed" class="tab-content hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                 <h3 class="text-md font-bold text-emerald-800 mb-4 uppercase tracking-wider"><i class="fa-solid fa-comments mr-2"></i>Real-Time Traveler Tips</h3>
                 <div id="community-feed" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
@@ -514,6 +559,9 @@
         let parkMarkerLayer = null;
         let nationalMarkerLayer = null;
         let stateMarkerLayer = null;
+        let nearbySearchLayer = null;
+        let currentNearbySearch = null;
+        let lastGeocodeRequestAt = 0;
         let parkFeatureLayer = null;
         let campsiteFeatureLayer = null;
         let campgroundMarkers = [];
@@ -947,6 +995,7 @@
             nationalMarkerLayer = L.layerGroup();
             parkMarkerLayer.addLayer(stateMarkerLayer);
             parkMarkerLayer.addLayer(nationalMarkerLayer);
+            nearbySearchLayer = L.layerGroup().addTo(parkMap);
 
             document.getElementById("nps-legend-icon").innerHTML = npsArrowheadSVG("nps-arrowhead");
             setTimeout(() => parkMap.invalidateSize(), 250);
@@ -1043,6 +1092,143 @@
                 parkSelect.value = found.park_id || found.id;
             }
             loadSelectedParkByName(parkName);
+        }
+
+        function calculateDirectMiles(lat1, lng1, lat2, lng2) {
+            const toRadians = (degrees) => degrees * Math.PI / 180;
+            const earthRadiusMiles = 3958.8;
+            const deltaLat = toRadians(lat2 - lat1);
+            const deltaLng = toRadians(lng2 - lng1);
+            const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(deltaLng / 2) ** 2;
+            return earthRadiusMiles * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        async function findParksNearPlace() {
+            const input = document.getElementById("near-location-input");
+            const status = document.getElementById("near-status");
+            const query = input.value.trim();
+            if (!query) {
+                status.textContent = "Enter a city, town, or ZIP code first.";
+                input.focus();
+                return;
+            }
+
+            const cacheKey = `park-blueprint-geocode:${query.toLowerCase()}`;
+            try {
+                const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+                if (cached && Number.isFinite(cached.lat) && Number.isFinite(cached.lng)) {
+                    showNearbyParks(cached.lat, cached.lng, cached.label || query);
+                    return;
+                }
+            } catch (error) {
+                console.warn("Saved location cache could not be read:", error);
+            }
+            if (Date.now() - lastGeocodeRequestAt < 1100) {
+                status.textContent = "Please wait a moment before starting another location search.";
+                return;
+            }
+            lastGeocodeRequestAt = Date.now();
+            status.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Finding that location…';
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            try {
+                const endpoint = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&addressdetails=1&q=${encodeURIComponent(query)}`;
+                const response = await fetch(endpoint, { signal: controller.signal, headers: { "Accept-Language": "en-US,en" } });
+                if (!response.ok) throw new Error(`Location search returned ${response.status}`);
+                const matches = await response.json();
+                if (!matches.length) {
+                    status.textContent = `No U.S. location matched “${query}.” Try adding the state name or using a ZIP code.`;
+                    return;
+                }
+                const match = matches[0];
+                const savedMatch = { lat: Number(match.lat), lng: Number(match.lon), label: match.display_name || query };
+                try { localStorage.setItem(cacheKey, JSON.stringify(savedMatch)); } catch (error) { console.warn("Location cache unavailable:", error); }
+                showNearbyParks(savedMatch.lat, savedMatch.lng, savedMatch.label);
+            } catch (error) {
+                console.error("Nearby location search failed:", error);
+                status.textContent = error.name === "AbortError" ? "The location search timed out. Please try again." : "The location search is temporarily unavailable. You can still use the park directory below.";
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        function findParksFromDevice() {
+            const status = document.getElementById("near-status");
+            if (!navigator.geolocation) {
+                status.textContent = "This browser does not provide device location. Enter a city, town, or ZIP code instead.";
+                return;
+            }
+            status.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Waiting for your location permission…';
+            navigator.geolocation.getCurrentPosition(
+                (position) => showNearbyParks(position.coords.latitude, position.coords.longitude, "Your current location"),
+                (error) => {
+                    const messages = {
+                        1: "Location permission was not granted. Enter a city, town, or ZIP code instead.",
+                        2: "Your device could not determine its location. Enter a city, town, or ZIP code instead.",
+                        3: "The device location request timed out. Please try again or enter a place."
+                    };
+                    status.textContent = messages[error.code] || "Your location could not be read. Enter a place instead.";
+                },
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+            );
+        }
+
+        function repeatNearbySearch() {
+            if (currentNearbySearch) showNearbyParks(currentNearbySearch.lat, currentNearbySearch.lng, currentNearbySearch.label);
+        }
+
+        function showNearbyParks(lat, lng, label) {
+            const status = document.getElementById("near-status");
+            const resultsContainer = document.getElementById("near-results");
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                status.textContent = "That location did not provide usable coordinates.";
+                return;
+            }
+
+            currentNearbySearch = { lat, lng, label };
+            const radius = Number(document.getElementById("near-radius").value || 100);
+            const type = document.getElementById("near-type").value;
+            const ranked = allParksData
+                .filter((park) => type === "ALL" || park.type === type)
+                .map((park) => ({
+                    ...park,
+                    distance: calculateDirectMiles(lat, lng, Number(park.latitude), Number(park.longitude))
+                }))
+                .filter((park) => Number.isFinite(park.distance) && park.distance <= radius)
+                .sort((a, b) => a.distance - b.distance);
+            const shown = ranked.slice(0, 24);
+
+            status.textContent = ranked.length
+                ? `${ranked.length.toLocaleString()} park${ranked.length === 1 ? "" : "s"} found within ${radius} miles of ${label}. Distances are straight-line estimates, not driving miles.`
+                : `No matching parks in this directory are within ${radius} miles of ${label}. Try a larger radius.`;
+            resultsContainer.classList.toggle("hidden", shown.length === 0);
+            resultsContainer.innerHTML = shown.map((park, index) => `
+                <article class="bg-white text-slate-900 rounded-xl p-4 border border-emerald-200 shadow-sm flex flex-col gap-2">
+                    <div class="flex justify-between items-start gap-3">
+                        <div>
+                            <p class="font-black text-sm leading-tight">${escapeHTML(park.name)}</p>
+                            <p class="text-xs text-slate-500 mt-1">${escapeHTML(park.state)} • ${escapeHTML(park.type)} Park</p>
+                        </div>
+                        <span class="shrink-0 px-2 py-1 rounded-lg bg-amber-100 text-amber-900 text-xs font-black">${park.distance < 10 ? park.distance.toFixed(1) : Math.round(park.distance)} mi</span>
+                    </div>
+                    <button type="button" data-near-park-index="${index}" class="mt-auto w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">Open Park</button>
+                </article>`).join("");
+            resultsContainer.querySelectorAll("[data-near-park-index]").forEach((button) => {
+                button.addEventListener("click", () => selectParkByName(shown[Number(button.dataset.nearParkIndex)].name));
+            });
+
+            if (parkMap && nearbySearchLayer) {
+                nearbySearchLayer.clearLayers();
+                L.circleMarker([lat, lng], { radius: 9, color: "#ffffff", weight: 3, fillColor: "#f59e0b", fillOpacity: 1 })
+                    .bindPopup(`<b>${escapeHTML(label)}</b><br>Nearby search center`).addTo(nearbySearchLayer);
+                shown.slice(0, 12).forEach((park) => {
+                    L.circleMarker([park.latitude, park.longitude], { radius: 11, color: "#f59e0b", weight: 3, fillColor: "transparent", fillOpacity: 0 })
+                        .bindTooltip(`${escapeHTML(park.name)} • ${park.distance.toFixed(1)} mi`).addTo(nearbySearchLayer);
+                });
+                const bounds = [[lat, lng], ...shown.slice(0, 12).map((park) => [park.latitude, park.longitude])];
+                parkMap.fitBounds(bounds, { padding: [45, 45], maxZoom: 9 });
+                document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "center" });
+            }
         }
 
         function applyFilters() {
@@ -1149,6 +1335,7 @@
             document.getElementById('view-explorer').classList.add('hidden');
             document.getElementById('view-badges').classList.add('hidden');
             document.getElementById('view-park-detail').classList.remove('hidden');
+            switchTab('overview', false);
 
             document.getElementById('park-title').innerText = parkName;
             document.getElementById('park-badge-type').innerText = (master.type || 'National') + " Park";
@@ -1850,24 +2037,34 @@
             }
         }
 
-        function switchTab(tabName) {
+        function switchTab(tabName, shouldScroll = true) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('bg-slate-200', 'text-emerald-800', 'border-b-2', 'border-emerald-600');
                 btn.classList.add('text-slate-500');
+                btn.classList.remove('active-tab');
+                btn.classList.add('inactive-tab');
             });
 
-            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activePanel = document.getElementById(`tab-${tabName}`);
             const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            if (!activePanel || !activeBtn) return;
+            activePanel.classList.remove('hidden');
             activeBtn.classList.add('bg-slate-200', 'text-emerald-800', 'border-b-2', 'border-emerald-600');
             activeBtn.classList.remove('text-slate-500');
+            activeBtn.classList.add('active-tab');
+            activeBtn.classList.remove('inactive-tab');
 
-            if (tabName === 'maps') {
+            if (tabName === 'overview') {
                 setTimeout(() => {
                     if (individualParkMap) individualParkMap.invalidateSize();
+                }, 300);
+            } else if (tabName === 'camping') {
+                setTimeout(() => {
                     if (campsiteParkMap) campsiteParkMap.invalidateSize();
                 }, 300);
             }
+            if (shouldScroll) document.getElementById('park-section-nav').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         async function fetchYouTubeVideoForPark(parkName) {
